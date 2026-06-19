@@ -3,1202 +3,497 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Bot Trading Dashboard</title>
+    <title>Trading Bot Dashboard</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+        .container { max-width: 1800px; margin: 0 auto; padding: 20px; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
-            padding: 20px;
-            min-height: 100vh;
-        }
+        .header { background: #1e293b; padding: 16px 24px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155; }
+        .header h1 { font-size: 22px; color: #38bdf8; }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .status-badge { padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+        .status-online { background: #065f46; color: #34d399; }
+        .status-offline { background: #7f1d1d; color: #fca5a5; }
 
-        .container { max-width: 1600px; margin: 0 auto; }
+        .section { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #334155; }
+        .section-title { font-size: 16px; font-weight: 700; color: #38bdf8; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
 
-        .header {
-            background: white;
-            padding: 20px 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        .exchange-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+        .exchange-card { background: #0f172a; border: 2px solid #334155; border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s; }
+        .exchange-card:hover { border-color: #38bdf8; }
+        .exchange-card.active { border-color: #22c55e; background: #052e16; }
+        .exchange-card.connected { border-color: #22c55e; }
+        .exchange-name { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+        .exchange-status { font-size: 11px; color: #94a3b8; }
+        .exchange-status.connected { color: #34d399; }
 
-        .header h1 { font-size: 28px; color: #667eea; }
-        .header-right { display: flex; align-items: center; gap: 15px; }
+        .conn-form { display: none; background: #0f172a; border-radius: 10px; padding: 16px; margin-bottom: 16px; border: 1px solid #334155; }
+        .conn-form.show { display: block; }
+        .form-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
+        .form-group { display: flex; flex-direction: column; gap: 4px; }
+        .form-group label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input, .form-group select { background: #1e293b; border: 1px solid #475569; border-radius: 6px; padding: 8px 10px; color: #e2e8f0; font-size: 13px; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #38bdf8; }
 
-        .exchange-badge {
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 12px;
-            text-transform: uppercase;
-            background: #f3f4f6;
-            color: #667eea;
-        }
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-success { background: #16a34a; color: white; }
+        .btn-success:hover { background: #15803d; }
+        .btn-danger { background: #dc2626; color: white; }
+        .btn-danger:hover { background: #b91c1c; }
+        .btn-secondary { background: #475569; color: white; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 14px;
-        }
+        .pairs-section { margin-top: 16px; }
+        .pairs-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .pair-chip { padding: 6px 12px; background: #334155; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+        .pair-chip:hover { border-color: #38bdf8; }
+        .pair-chip.selected { background: #1e40af; border-color: #3b82f6; }
 
-        .btn-primary { background: #667eea; color: white; }
-        .btn-primary:hover { background: #5568d3; }
-        .btn-success { background: #10b981; color: white; }
-        .btn-success:hover { background: #059669; }
-        .btn-danger { background: #ef4444; color: white; }
-        .btn-danger:hover { background: #dc2626; }
-        .btn-secondary { background: #6b7280; color: white; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .bots-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+        .bot-slot { background: #0f172a; border: 2px solid #334155; border-radius: 10px; padding: 14px; transition: all 0.2s; }
+        .bot-slot.running { border-color: #22c55e; box-shadow: 0 0 20px rgba(34, 197, 94, 0.1); }
+        .bot-slot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .bot-slot-title { font-weight: 700; font-size: 13px; color: #38bdf8; }
+        .bot-dot { width: 10px; height: 10px; border-radius: 50%; background: #475569; }
+        .bot-dot.active { background: #22c55e; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
+        .bot-slot select { width: 100%; background: #1e293b; border: 1px solid #475569; border-radius: 6px; padding: 6px 8px; color: #e2e8f0; font-size: 12px; margin-bottom: 8px; }
+        .bot-controls { display: flex; gap: 6px; margin-top: 8px; }
+        .bot-controls button { flex: 1; padding: 6px; font-size: 11px; }
+        .bot-info { margin-top: 8px; padding: 8px; background: #1e293b; border-radius: 6px; font-size: 11px; color: #94a3b8; }
+        .bot-info.active { background: #052e16; color: #34d399; }
 
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
+        .trend-box { margin: 8px 0; padding: 8px; border-radius: 6px; text-align: center; font-weight: 700; font-size: 12px; }
+        .trend-buy { background: #065f46; color: #34d399; }
+        .trend-sell { background: #7f1d1d; color: #fca5a5; }
+        .trend-neutral { background: #1e293b; color: #94a3b8; }
 
-        .stat-label { font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-        .stat-value { font-size: 28px; font-weight: 700; color: #333; }
+        .positions-table { width: 100%; border-collapse: collapse; }
+        .positions-table th { background: #0f172a; padding: 10px; text-align: left; font-size: 12px; color: #94a3b8; border-bottom: 2px solid #334155; }
+        .positions-table td { padding: 10px; border-bottom: 1px solid #334155; font-size: 13px; }
+        .positive { color: #34d399; }
+        .negative { color: #f87171; }
 
-        /* Bot Slots Grid */
-        .bots-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
+        .webhook-info { background: #0f172a; border-radius: 8px; padding: 12px; margin-top: 12px; border: 1px solid #334155; }
+        .webhook-url { font-family: monospace; font-size: 12px; color: #38bdf8; word-break: break-all; }
 
-        .bot-slot {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            border: 3px solid #e5e7eb;
-            transition: all 0.3s;
-        }
-
-        .bot-slot.active {
-            border-color: #10b981;
-            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.2);
-        }
-
-        .bot-slot-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #f3f4f6;
-        }
-
-        .bot-slot-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: #667eea;
-        }
-
-        .bot-status {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #e5e7eb;
-        }
-
-        .bot-status.running { background: #10b981; animation: pulse 2s infinite; }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 600;
-            color: #374151;
-            font-size: 13px;
-        }
-
-        .form-group select,
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-        }
-
-        .form-group select:focus,
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .bot-controls {
-            display: flex;
-            gap: 8px;
-            margin-top: 15px;
-        }
-
-        .bot-controls button {
-            flex: 1;
-            padding: 10px;
-            font-size: 13px;
-        }
-
-        .bot-info {
-            margin-top: 12px;
-            padding: 10px;
-            background: #f9fafb;
-            border-radius: 6px;
-            font-size: 12px;
-            color: #6b7280;
-        }
-
-        .bot-info.active {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .alert {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-        .alert-success { background: #d1fae5; color: #065f46; border: 1px solid #10b981; }
-        .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #ef4444; }
-        .alert-info { background: #dbeafe; color: #1e40af; border: 1px solid #3b82f6; }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.show { display: flex; }
-
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .modal-header h2 { font-size: 20px; color: #667eea; }
-        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280; }
-
-        .account-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .account-item {
-            padding: 15px;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .account-item:hover { border-color: #667eea; }
-        .account-item.active { border-color: #10b981; background: #f0fdf4; }
-
-        .account-name { font-weight: 600; font-size: 16px; color: #333; }
-        .account-details { font-size: 12px; color: #6b7280; margin-top: 5px; }
-
-        .positive { color: #10b981; }
-        .negative { color: #ef4444; }
-
-        h2 { font-size: 18px; color: #667eea; margin-bottom: 15px; }
+        .alert { padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; }
+        .alert-success { background: #065f46; color: #34d399; border: 1px solid #22c55e; }
+        .alert-error { background: #7f1d1d; color: #fca5a5; border: 1px solid #ef4444; }
+        .alert-info { background: #1e3a5f; color: #93c5fd; border: 1px solid #3b82f6; }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <div class="header">
-            <h1>🤖 Multi-Bot Trading Dashboard</h1>
+            <h1>Trading Bot Dashboard</h1>
             <div class="header-right">
-                <span class="exchange-badge" id="exchange-badge">OKX</span>
-                <button class="btn btn-secondary" id="accounts-btn">👤 Аккаунты</button>
+                <span class="status-badge status-online" id="status-badge">Online</span>
+                <button class="btn btn-secondary" onclick="loadRunningBots()">Refresh</button>
             </div>
         </div>
 
-        <!-- Alert Messages -->
         <div id="alert-container"></div>
 
-        <!-- Stats -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">💰 Баланс</div>
-                <div class="stat-value" id="balance">$0.00</div>
+        <!-- Exchange Connection -->
+        <div class="section">
+            <div class="section-title">Exchange Connection</div>
+            <div class="exchange-grid" id="exchange-grid"></div>
+            <div class="conn-form" id="conn-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>API Key</label>
+                        <input type="text" id="conn-api-key" placeholder="API Key">
+                    </div>
+                    <div class="form-group">
+                        <label>API Secret</label>
+                        <input type="password" id="conn-api-secret" placeholder="API Secret">
+                    </div>
+                    <div class="form-group" id="passphrase-group">
+                        <label>Passphrase</label>
+                        <input type="password" id="conn-passphrase" placeholder="Passphrase">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Mode</label>
+                        <select id="conn-mode">
+                            <option value="testnet">Testnet</option>
+                            <option value="live">Live</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <button class="btn btn-success" onclick="connectExchange()">Connect</button>
+                    </div>
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <button class="btn btn-secondary" onclick="disconnectExchange()">Disconnect</button>
+                    </div>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-label">📈 Equity</div>
-                <div class="stat-value" id="equity">$0.00</div>
-                <div class="stat-change" id="equity-change" style="font-size: 14px; margin-top: 5px;">+$0.00 (0.00%)</div>
+        </div>
+
+        <!-- Trading Pairs -->
+        <div class="section" id="pairs-section" style="display:none;">
+            <div class="section-title">Trading Pairs</div>
+            <div class="pairs-grid" id="pairs-grid"></div>
+            <div style="margin-top: 12px; display: flex; gap: 8px;">
+                <button class="btn btn-primary" onclick="selectAllPairs()">Select All</button>
+                <button class="btn btn-secondary" onclick="deselectAllPairs()">Deselect All</button>
             </div>
-            <div class="stat-card">
-                <div class="stat-label">🤖 Активных ботов</div>
-                <div class="stat-value" id="active-bots">0 / 10</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">💵 Общий PnL</div>
-                <div class="stat-value" id="total-pnl">$0.00</div>
+        </div>
+
+        <!-- Webhook Info -->
+        <div class="section">
+            <div class="section-title">TradingView Webhook</div>
+            <div class="webhook-info">
+                <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">Webhook URL (set in TradingView alert):</div>
+                <div class="webhook-url" id="webhook-url">Loading...</div>
+                <div style="font-size: 11px; color: #64748b; margin-top: 8px;">
+                    JSON payload: { "symbol": "BTCUSDT", "action": "buy" | "sell", "price": 50000 }
+                </div>
             </div>
         </div>
 
         <!-- Bot Slots -->
-        <div class="bots-grid" id="bots-grid">
-            <!-- Bot slots will be generated here -->
+        <div class="section">
+            <div class="section-title">Bot Slots (10 concurrent)</div>
+            <div class="bots-grid" id="bots-grid"></div>
         </div>
 
         <!-- Open Positions -->
-        <div class="stat-card" style="margin-top: 20px;">
-            <h2 style="font-size: 18px; color: #667eea; margin-bottom: 15px;">📊 Открытые позиции</h2>
-            <div id="positions-container">
-                <p style="color: #6b7280; text-align: center; padding: 20px;">Нет открытых позиций</p>
-            </div>
-        </div>
-
-        <!-- Trading Signals -->
-        <div class="stat-card" style="margin-top: 20px;">
-            <h2 style="font-size: 18px; color: #667eea; margin-bottom: 15px;">🎯 Торговые сигналы</h2>
-            <div id="signals-list">
-                <p style="color: #6b7280; text-align: center; padding: 20px;">Нет активных сигналов</p>
-            </div>
-        </div>
-
-        <!-- Recent Trades -->
-        <div class="stat-card" style="margin-top: 20px;">
-            <h2 style="font-size: 18px; color: #667eea; margin-bottom: 15px;">📝 Последние сделки</h2>
-            <div id="recent-trades-list">
-                <p style="color: #6b7280; text-align: center; padding: 20px;">Нет сделок</p>
-            </div>
-        </div>
-
-        <!-- Statistics -->
-        <div class="stat-card" style="margin-top: 20px;">
-            <h2 style="font-size: 18px; color: #667eea; margin-bottom: 15px;">📈 Статистика</h2>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
-                <div>
-                    <div class="stat-label">Всего сделок</div>
-                    <div style="font-size: 24px; font-weight: 700; color: #333;" id="total-trades">0</div>
-                </div>
-                <div>
-                    <div class="stat-label">Прибыльных</div>
-                    <div style="font-size: 24px; font-weight: 700; color: #10b981;" id="winning-trades">0</div>
-                </div>
-                <div>
-                    <div class="stat-label">Убыточных</div>
-                    <div style="font-size: 24px; font-weight: 700; color: #ef4444;" id="losing-trades">0</div>
-                </div>
-                <div>
-                    <div class="stat-label">Win Rate</div>
-                    <div style="font-size: 24px; font-weight: 700; color: #333;" id="win-rate">0%</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Trade History & Journal Section -->
-    <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-bottom: 20px;">
-        <h2 style="color: #667eea; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-            📊 История сделок и дневник трейдера
-        </h2>
-
-        <!-- Filter Tabs -->
-        <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px;">
-            <button class="btn btn-primary" id="tab-all" onclick="filterTrades('all')" style="padding: 8px 16px;">Все сделки</button>
-            <button class="btn btn-secondary" id="tab-profit" onclick="filterTrades('profit')" style="padding: 8px 16px;">Прибыльные</button>
-            <button class="btn btn-secondary" id="tab-loss" onclick="filterTrades('loss')" style="padding: 8px 16px;">Убыточные</button>
-            <button class="btn btn-secondary" id="tab-today" onclick="filterTrades('today')" style="padding: 8px 16px;">Сегодня</button>
-        </div>
-
-        <!-- Trade History Table -->
-        <div style="overflow-x: auto;">
-            <table id="trade-history-table" style="width: 100%; border-collapse: collapse;">
+        <div class="section">
+            <div class="section-title">Open Positions</div>
+            <table class="positions-table">
                 <thead>
-                    <tr style="background: #f9fafb; text-align: left;">
-                        <th style="padding: 12px; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Дата/Время</th>
-                        <th style="padding: 12px; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Символ</th>
-                        <th style="padding: 12px; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Направление</th>
-                        <th style="padding: 12px; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Вход</th>
-                        <th style="padding: 12px; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Выход</th>
-                        <th style="padding: 12px; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Размер</th>
-                        <th style="padding: 12px; border-bottom: 2px solid #e5e7eb; font-weight: 600;">PnL</th>
-                        <th style="padding: 12px; border-bottom: 2px solid #e5e7eb; font-weight: 600;">%</th>
-                        <th style="padding: 12px; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Причина</th>
+                    <tr>
+                        <th>Exchange</th>
+                        <th>Symbol</th>
+                        <th>Side</th>
+                        <th>Size</th>
+                        <th>Entry</th>
+                        <th>PnL</th>
+                        <th>Source</th>
                     </tr>
                 </thead>
-                <tbody id="trade-history-body">
-                    <tr>
-                        <td colspan="9" style="padding: 40px; text-align: center; color: #6b7280;">
-                            Загрузка истории сделок...
-                        </td>
-                    </tr>
+                <tbody id="positions-body">
+                    <tr><td colspan="7" style="text-align:center; color:#64748b;">No open positions</td></tr>
                 </tbody>
             </table>
-        </div>
-
-        <!-- Pagination -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-            <div style="color: #6b7280; font-size: 14px;" id="trade-count">Всего сделок: 0</div>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn btn-secondary" onclick="loadTradeHistory()" style="padding: 8px 16px;">🔄 Обновить</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Accounts Modal -->
-    <div class="modal" id="accounts-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>👤 Управление аккаунтами</h2>
-                <button class="modal-close" id="close-modal">×</button>
-            </div>
-
-            <div style="margin-bottom: 20px;">
-                <button class="btn btn-primary" id="show-add-account-btn" onclick="toggleAddAccountForm()">➕ Добавить аккаунт</button>
-            </div>
-
-            <!-- Add Account Form -->
-            <div id="add-account-form" style="display: none; background: #f9fafb; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-                <h3 style="margin-bottom: 15px; color: #667eea;">Новый аккаунт</h3>
-
-                <div class="form-group">
-                    <label>Название аккаунта</label>
-                    <input type="text" id="new-account-name" placeholder="Мой OKX аккаунт" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px;">
-                </div>
-
-                <div class="form-group">
-                    <label>Биржа</label>
-                    <select id="new-account-exchange" onchange="updatePassphraseField()" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px;">
-                        <option value="okx">OKX</option>
-                        <option value="bybit">Bybit</option>
-                        <option value="bingx">BingX</option>
-                        <option value="gate">Gate.io</option>
-                        <option value="bitget">Bitget</option>
-                        <option value="pionex">Pionex</option>
-                        <option value="weex">Weex</option>
-                        <option value="toobit">Toobit</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>API Key</label>
-                    <input type="text" id="new-account-api-key" placeholder="Введите API Key" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px;">
-                </div>
-
-                <div class="form-group">
-                    <label>API Secret</label>
-                    <input type="password" id="new-account-api-secret" placeholder="Введите API Secret" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px;">
-                </div>
-
-                <div class="form-group" id="passphrase-group">
-                    <label>Passphrase (только для OKX)</label>
-                    <input type="password" id="new-account-passphrase" placeholder="Введите Passphrase" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px;">
-                </div>
-
-                <div class="form-group">
-                    <label>Режим торговли</label>
-                    <select id="new-account-trading-mode" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px;">
-                        <option value="testnet">Testnet (тестовая сеть)</option>
-                        <option value="paper">Paper Trading (симуляция)</option>
-                        <option value="live">Live (реальная торговля)</option>
-                    </select>
-                </div>
-
-                <div style="display: flex; gap: 10px; margin-top: 15px;">
-                    <button class="btn btn-success" onclick="createAccount()">✓ Создать</button>
-                    <button class="btn btn-secondary" onclick="toggleAddAccountForm()">✕ Отмена</button>
-                </div>
-            </div>
-
-            <div class="account-list" id="account-list">
-                <p style="color: #6b7280; text-align: center; padding: 20px;">Загрузка...</p>
-            </div>
         </div>
     </div>
 
     <script>
-        // Available trading pairs
-        const AVAILABLE_PAIRS = [
-            'BTC-USDT-SWAP', 'ETH-USDT-SWAP', 'SOL-USDT-SWAP', 'BNB-USDT-SWAP',
-            'XRP-USDT-SWAP', 'ADA-USDT-SWAP', 'DOGE-USDT-SWAP', 'MATIC-USDT-SWAP',
-            'DOT-USDT-SWAP', 'AVAX-USDT-SWAP', 'LINK-USDT-SWAP', 'UNI-USDT-SWAP',
-            'ATOM-USDT-SWAP', 'LTC-USDT-SWAP', 'BCH-USDT-SWAP', 'FIL-USDT-SWAP'
+        const EXCHANGES = [
+            { id: 'okx', name: 'OKX', passphrase: true },
+            { id: 'bybit', name: 'Bybit', passphrase: false },
+            { id: 'bingx', name: 'BingX', passphrase: false },
+            { id: 'gate', name: 'Gate.io', passphrase: false },
+            { id: 'bitget', name: 'Bitget', passphrase: true },
+            { id: 'pionex', name: 'Pionex', passphrase: false },
+            { id: 'weex', name: 'Weex', passphrase: true },
+            { id: 'toobit', name: 'Toobit', passphrase: false }
         ];
 
-        // Bot slots state
-        let botSlots = [];
-        let activeAccount = null;
+        let selectedExchange = null;
+        let connectedExchanges = {};
+        let availablePairs = [];
+        let selectedPairs = new Set();
+        let botSlots = Array.from({length: 10}, (_, i) => ({
+            id: i + 1, symbol: null, exchange: null, running: false, botId: null
+        }));
 
-        // Initialize 10 bot slots
-        function initializeBotSlots() {
-            const grid = document.getElementById('bots-grid');
-            grid.innerHTML = '';
-
-            for (let i = 1; i <= 10; i++) {
-                const slot = {
-                    id: i,
-                    symbol: AVAILABLE_PAIRS[i - 1] || AVAILABLE_PAIRS[0],
-                    timeframe: 15,
-                    multiplier: 3.0,
-                    running: false,
-                    botId: null
-                };
-                botSlots.push(slot);
-
-                const slotHtml = `
-                    <div class="bot-slot" id="slot-${i}">
-                        <div class="bot-slot-header">
-                            <div class="bot-slot-title">Бот #${i}</div>
-                            <div class="bot-status" id="status-${i}"></div>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Торговая пара</label>
-                            <select id="symbol-${i}" onchange="updateSlot(${i}, 'symbol', this.value)">
-                                ${AVAILABLE_PAIRS.map(pair =>
-                                    `<option value="${pair}" ${pair === slot.symbol ? 'selected' : ''}>${pair}</option>`
-                                ).join('')}
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Таймфрейм</label>
-                            <select id="timeframe-${i}" onchange="updateSlot(${i}, 'timeframe', this.value)">
-                                <option value="5">5 минут</option>
-                                <option value="10">10 минут</option>
-                                <option value="15" selected>15 минут</option>
-                                <option value="30">30 минут</option>
-                                <option value="60">1 час</option>
-                            </select>
-                        </div>
-
-                        <div class="bot-controls">
-                            <button class="btn btn-success" id="start-${i}" onclick="startBot(${i})">▶️ Старт</button>
-                            <button class="btn btn-danger" id="stop-${i}" onclick="stopBot(${i})" disabled>⏹️ Стоп</button>
-                        </div>
-
-                        <div class="trend-indicator" id="trend-${i}" style="margin: 15px 0; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; background: #1f2937; color: #9ca3af;">
-                            <div style="font-size: 12px; margin-bottom: 5px;">Направление тренда</div>
-                            <div id="trend-direction-${i}" style="font-size: 16px;">—</div>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Supertrend Multiplier</label>
-                            <input type="number" id="multiplier-${i}" min="1" max="10" step="0.1" value="3.0"
-                                   onchange="updateSlot(${i}, 'multiplier', this.value)">
-                        </div>
-
-                        <div class="bot-info" id="info-${i}">
-                            Не запущен
-                        </div>
-                    </div>
-                `;
-                grid.innerHTML += slotHtml;
-            }
+        // Initialize exchange grid
+        function initExchangeGrid() {
+            const grid = document.getElementById('exchange-grid');
+            grid.innerHTML = EXCHANGES.map(ex => `
+                <div class="exchange-card" id="ex-${ex.id}" onclick="selectExchange('${ex.id}')">
+                    <div class="exchange-name">${ex.name}</div>
+                    <div class="exchange-status" id="ex-status-${ex.id}">Not connected</div>
+                </div>
+            `).join('');
         }
 
-        // Update slot configuration
-        function updateSlot(slotId, field, value) {
-            const slot = botSlots.find(s => s.id === slotId);
-            if (slot) {
-                slot[field] = field === 'multiplier' ? parseFloat(value) :
-                              field === 'timeframe' ? parseInt(value) : value;
-            }
-        }
+        function selectExchange(exchangeId) {
+            selectedExchange = EXCHANGES.find(e => e.id === exchangeId);
+            document.querySelectorAll('.exchange-card').forEach(c => c.classList.remove('active'));
+            document.getElementById(`ex-${exchangeId}`).classList.add('active');
+            document.getElementById('conn-form').classList.add('show');
 
-        // Start bot for slot
-        async function startBot(slotId) {
-            if (!activeAccount) {
-                showAlert('Выберите аккаунт для торговли', 'error');
-                document.getElementById('accounts-modal').classList.add('show');
-                return;
-            }
+            const pg = document.getElementById('passphrase-group');
+            pg.style.display = selectedExchange.passphrase ? 'block' : 'none';
 
-            const slot = botSlots.find(s => s.id === slotId);
-            if (!slot) return;
-
-            try {
-                const response = await fetch('/api/multibot/start', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        account_id: activeAccount.account_id,
-                        symbol: slot.symbol,
-                        timeframe: slot.timeframe,
-                        supertrend_multiplier: slot.multiplier
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    slot.running = true;
-                    slot.botId = result.bot_id;
-                    updateSlotUI(slotId);
-                    showAlert(`Бот #${slotId} запущен для ${slot.symbol}`, 'success');
-                    updateStats();
-                } else {
-                    showAlert(result.error || 'Ошибка запуска бота', 'error');
-                }
-            } catch (error) {
-                showAlert('Ошибка соединения с сервером', 'error');
-            }
-        }
-
-        // Stop bot for slot
-        async function stopBot(slotId) {
-            const slot = botSlots.find(s => s.id === slotId);
-            if (!slot || !slot.running || !slot.botId) {
-                showAlert('Бот не запущен или ID бота не найден', 'error');
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/multibot/stop', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        bot_id: slot.botId
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    slot.running = false;
-                    slot.botId = null;
-                    updateSlotUI(slotId);
-                    showAlert(`Бот #${slotId} остановлен`, 'success');
-                    updateStats();
-                } else {
-                    showAlert(result.error || 'Ошибка остановки бота', 'error');
-                }
-            } catch (error) {
-                console.error('Stop bot error:', error);
-                showAlert('Ошибка соединения с сервером', 'error');
-            }
-        }
-
-        // Update slot UI
-        function updateSlotUI(slotId) {
-            const slot = botSlots.find(s => s.id === slotId);
-            if (!slot) return;
-
-            const slotEl = document.getElementById(`slot-${slotId}`);
-            const statusEl = document.getElementById(`status-${slotId}`);
-            const startBtn = document.getElementById(`start-${slotId}`);
-            const stopBtn = document.getElementById(`stop-${slotId}`);
-            const infoEl = document.getElementById(`info-${slotId}`);
-
-            if (slot.running) {
-                slotEl.classList.add('active');
-                statusEl.classList.add('running');
-                startBtn.disabled = true;
-                stopBtn.disabled = false;
-                infoEl.classList.add('active');
-                infoEl.textContent = `🟢 Работает: ${slot.symbol} • ${slot.timeframe}m • ST ${slot.multiplier}`;
+            if (connectedExchanges[exchangeId]) {
+                document.getElementById('conn-api-key').value = connectedExchanges[exchangeId].apiKey || '';
+                document.getElementById('conn-api-secret').value = '';
+                document.getElementById('conn-passphrase').value = '';
             } else {
-                slotEl.classList.remove('active');
-                statusEl.classList.remove('running');
-                startBtn.disabled = false;
-                stopBtn.disabled = true;
-                infoEl.classList.remove('active');
-                infoEl.textContent = 'Не запущен';
+                document.getElementById('conn-api-key').value = '';
+                document.getElementById('conn-api-secret').value = '';
+                document.getElementById('conn-passphrase').value = '';
             }
         }
 
-        // Update stats
-        function updateStats() {
-            const activeBots = botSlots.filter(s => s.running).length;
-            document.getElementById('active-bots').textContent = `${activeBots} / 10`;
-        }
-
-        // Show alert
-        function showAlert(message, type = 'info') {
-            const container = document.getElementById('alert-container');
-            const alert = document.createElement('div');
-            alert.className = `alert alert-${type}`;
-            alert.textContent = message;
-            container.appendChild(alert);
-            setTimeout(() => alert.remove(), 5000);
-        }
-
-        // Load accounts
-        async function loadAccounts() {
-            try {
-                const response = await fetch('/api/accounts');
-                const result = await response.json();
-
-                if (!result.success) {
-                    showAlert('Ошибка загрузки аккаунтов', 'error');
-                    return;
-                }
-
-                const accounts = result.data;
-                const container = document.getElementById('account-list');
-
-                if (accounts.length === 0) {
-                    container.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 20px;">Нет аккаунтов. Нажмите "Добавить аккаунт" выше.</p>';
-                    return;
-                }
-
-                container.innerHTML = accounts.map(acc => `
-                    <div class="account-item ${acc.is_active ? 'active' : ''}" onclick="selectAccount('${acc.account_id}')">
-                        <div class="account-name">${acc.name} ${acc.is_active ? '✓' : ''}</div>
-                        <div class="account-details">
-                            ${acc.exchange.toUpperCase()} • ${acc.api_key_masked}
-                        </div>
-                    </div>
-                `).join('');
-
-                // Set active account
-                const active = accounts.find(a => a.is_active);
-                if (active) {
-                    activeAccount = active;
-                    document.getElementById('exchange-badge').textContent = active.exchange.toUpperCase();
-
-                    // Load balance for active account
-                    loadAccountBalance(active.account_id);
-                }
-
-            } catch (error) {
-                showAlert('Ошибка соединения с сервером', 'error');
-            }
-        }
-
-        // Load account balance
-        async function loadAccountBalance(accountId) {
-            try {
-                const response = await fetch(`/api/accounts/${accountId}/balance`);
-                const result = await response.json();
-
-                if (result.success) {
-                    const balance = result.data.balance;
-                    document.getElementById('balance').textContent = `$${balance.toFixed(2)}`;
-                    document.getElementById('equity').textContent = `$${balance.toFixed(2)}`;
-                    console.log(`Balance loaded: ${balance} USDT`);
-                } else {
-                    console.error('Failed to load balance:', result.error);
-                }
-            } catch (error) {
-                console.error('Error loading balance:', error);
-            }
-        }
-
-        // Trade History Management
-        let allTrades = [];
-        let currentFilter = 'all';
-
-        async function loadTradeHistory() {
-            try {
-                const response = await fetch('/api/trades/history?limit=100&status=closed');
-                const result = await response.json();
-
-                if (result.success) {
-                    allTrades = result.data;
-                    filterTrades(currentFilter);
-                    document.getElementById('trade-count').textContent = `Всего сделок: ${allTrades.length}`;
-                } else {
-                    console.error('Failed to load trade history:', result.error);
-                }
-            } catch (error) {
-                console.error('Error loading trade history:', error);
-            }
-        }
-
-        function filterTrades(filter) {
-            currentFilter = filter;
-
-            // Update button styles
-            ['tab-all', 'tab-profit', 'tab-loss', 'tab-today'].forEach(id => {
-                const btn = document.getElementById(id);
-                if (id === `tab-${filter}`) {
-                    btn.className = 'btn btn-primary';
-                } else {
-                    btn.className = 'btn btn-secondary';
-                }
-            });
-
-            let filteredTrades = allTrades;
-
-            // Apply filters
-            if (filter === 'profit') {
-                filteredTrades = allTrades.filter(t => t.pnl > 0);
-            } else if (filter === 'loss') {
-                filteredTrades = allTrades.filter(t => t.pnl < 0);
-            } else if (filter === 'today') {
-                const today = new Date().toISOString().split('T')[0];
-                filteredTrades = allTrades.filter(t => t.exit_time && t.exit_time.startsWith(today));
-            }
-
-            displayTrades(filteredTrades);
-        }
-
-        function displayTrades(trades) {
-            const tbody = document.getElementById('trade-history-body');
-
-            if (trades.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="padding: 40px; text-align: center; color: #6b7280;">Нет сделок для отображения</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = trades.map(trade => {
-                const isProfit = trade.pnl >= 0;
-                const pnlColor = isProfit ? '#10b981' : '#ef4444';
-                const pnlIcon = isProfit ? '✅' : '❌';
-                const direction = trade.direction === 'long' ? '🟢 LONG' : '🔴 SHORT';
-
-                // Format dates
-                const entryDate = new Date(trade.entry_time).toLocaleString('ru-RU', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                const exitDate = trade.exit_time ? new Date(trade.exit_time).toLocaleString('ru-RU', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                }) : '-';
-
-                const exitReason = trade.exit_reason || 'manual';
-                const reasonEmoji = {
-                    'signal': '📊',
-                    'stop_loss': '🛑',
-                    'take_profit': '🎯',
-                    'manual': '✋'
-                }[exitReason] || '📝';
-
-                return `
-                    <tr style="border-bottom: 1px solid #f3f4f6; transition: background 0.2s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
-                        <td style="padding: 12px; font-size: 13px;">${exitDate}</td>
-                        <td style="padding: 12px; font-weight: 600;">${trade.symbol}</td>
-                        <td style="padding: 12px;">${direction}</td>
-                        <td style="padding: 12px; font-family: monospace;">$${trade.entry_price.toFixed(2)}</td>
-                        <td style="padding: 12px; font-family: monospace;">$${trade.exit_price ? trade.exit_price.toFixed(2) : '-'}</td>
-                        <td style="padding: 12px; font-family: monospace;">${trade.size.toFixed(4)}</td>
-                        <td style="padding: 12px; font-weight: 700; color: ${pnlColor};">${pnlIcon} $${trade.pnl.toFixed(2)}</td>
-                        <td style="padding: 12px; font-weight: 600; color: ${pnlColor};">${trade.pnl_percent.toFixed(2)}%</td>
-                        <td style="padding: 12px;">${reasonEmoji} ${exitReason}</td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        // Select account
-        async function selectAccount(accountId) {
-            try {
-                const response = await fetch(`/api/accounts/${accountId}/activate`, {method: 'POST'});
-                const result = await response.json();
-
-                if (result.success) {
-                    showAlert('Аккаунт активирован', 'success');
-                    document.getElementById('accounts-modal').classList.remove('show');
-                    loadAccounts();
-                } else {
-                    showAlert(result.error || 'Ошибка активации', 'error');
-                }
-            } catch (error) {
-                showAlert('Ошибка соединения с сервером', 'error');
-            }
-        }
-
-        // Toggle add account form
-        function toggleAddAccountForm() {
-            const form = document.getElementById('add-account-form');
-            form.style.display = form.style.display === 'none' ? 'block' : 'none';
-
-            // Clear form fields
-            if (form.style.display === 'block') {
-                document.getElementById('new-account-name').value = '';
-                document.getElementById('new-account-api-key').value = '';
-                document.getElementById('new-account-api-secret').value = '';
-                document.getElementById('new-account-passphrase').value = '';
-                document.getElementById('new-account-exchange').value = 'okx';
-                updatePassphraseField();
-            }
-        }
-
-        // Update passphrase field visibility
-        function updatePassphraseField() {
-            const exchange = document.getElementById('new-account-exchange').value;
-            const passphraseGroup = document.getElementById('passphrase-group');
-            passphraseGroup.style.display = (exchange === 'okx' || exchange === 'bitget') ? 'block' : 'none';
-        }
-
-        // Create new account
-        async function createAccount() {
-            const name = document.getElementById('new-account-name').value.trim();
-            const exchange = document.getElementById('new-account-exchange').value;
-            const apiKey = document.getElementById('new-account-api-key').value.trim();
-            const apiSecret = document.getElementById('new-account-api-secret').value.trim();
-            const passphrase = document.getElementById('new-account-passphrase').value.trim();
-            const tradingMode = document.getElementById('new-account-trading-mode').value;
-
-            // Validation
-            if (!name) {
-                showAlert('Введите название аккаунта', 'error');
-                return;
-            }
+        async function connectExchange() {
+            if (!selectedExchange) return;
+            const apiKey = document.getElementById('conn-api-key').value.trim();
+            const apiSecret = document.getElementById('conn-api-secret').value.trim();
+            const passphrase = document.getElementById('conn-passphrase').value.trim();
+            const mode = document.getElementById('conn-mode').value;
 
             if (!apiKey || !apiSecret) {
-                showAlert('Введите API Key и API Secret', 'error');
+                showAlert('Enter API Key and Secret', 'error');
                 return;
             }
-
-            if ((exchange === 'okx' || exchange === 'bitget') && !passphrase) {
-                showAlert(`Для ${exchange.toUpperCase()} требуется Passphrase`, 'error');
+            if (selectedExchange.passphrase && !passphrase) {
+                showAlert(`${selectedExchange.name} requires Passphrase`, 'error');
                 return;
             }
 
             try {
-                const response = await fetch('/api/accounts', {
+                const resp = await fetch('/api/exchange/connect', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
-                        name: name,
-                        exchange: exchange,
+                        exchange: selectedExchange.id,
                         api_key: apiKey,
                         api_secret: apiSecret,
                         passphrase: passphrase,
-                        timeframe: 15,
-                        supertrend_multiplier: 3.0,
-                        trading_mode: tradingMode
+                        testnet: mode === 'testnet'
                     })
                 });
-
-                const result = await response.json();
-
+                const result = await resp.json();
                 if (result.success) {
-                    showAlert(`Аккаунт "${name}" создан успешно`, 'success');
-                    toggleAddAccountForm();
-                    loadAccounts();
+                    connectedExchanges[selectedExchange.id] = { apiKey, mode };
+                    document.getElementById(`ex-${selectedExchange.id}`).classList.add('connected');
+                    document.getElementById(`ex-status-${selectedExchange.id}`).textContent = `Connected (${mode})`;
+                    document.getElementById(`ex-status-${selectedExchange.id}`).classList.add('connected');
+                    showAlert(`${selectedExchange.name} connected`, 'success');
+                    loadPairs(selectedExchange.id);
                 } else {
-                    showAlert(result.error || 'Ошибка создания аккаунта', 'error');
+                    showAlert(result.error || 'Connection failed', 'error');
                 }
-            } catch (error) {
-                console.error('Create account error:', error);
-                showAlert('Ошибка соединения с сервером', 'error');
+            } catch(e) {
+                showAlert('Connection error', 'error');
             }
         }
 
-        // Modal management
-        document.getElementById('accounts-btn').addEventListener('click', () => {
-            document.getElementById('accounts-modal').classList.add('show');
-            loadAccounts();
-        });
-
-        document.getElementById('close-modal').addEventListener('click', () => {
-            document.getElementById('accounts-modal').classList.remove('show');
-        });
-
-        // Update dashboard data
-        async function updateDashboard() {
+        async function disconnectExchange() {
+            if (!selectedExchange) return;
             try {
-                const response = await fetch('/api/all');
-                const result = await response.json();
-                if (!result.success) return;
-
-                const data = result.data;
-                document.getElementById('balance').textContent = `$${data.balance.toFixed(2)}`;
-                document.getElementById('equity').textContent = `$${data.equity.toFixed(2)}`;
-
-                // Calculate and display equity change
-                const equityChange = data.equity - data.balance;
-                const equityChangePercent = data.balance > 0 ? (equityChange / data.balance * 100) : 0;
-                const equityChangeEl = document.getElementById('equity-change');
-                const sign = equityChange >= 0 ? '+' : '';
-                const color = equityChange >= 0 ? '#10b981' : '#ef4444';
-                equityChangeEl.textContent = `${sign}$${equityChange.toFixed(2)} (${sign}${equityChangePercent.toFixed(2)}%)`;
-                equityChangeEl.style.color = color;
-
-                // Load ALL positions including manual ones
-                await loadAllPositions();
-
-                // Update signals
-                if (data.signals) {
-                    updateTradingSignals(data.signals);
-                }
-
-                // Update recent trades
-                if (data.recent_trades) {
-                    updateRecentTrades(data.recent_trades);
-                }
-
-                // Update statistics
-                const stats = data.statistics || {};
-                document.getElementById('total-trades').textContent = stats.total_trades || 0;
-                document.getElementById('winning-trades').textContent = stats.winning_trades || 0;
-                document.getElementById('losing-trades').textContent = stats.losing_trades || 0;
-                document.getElementById('win-rate').textContent = `${(stats.win_rate || 0).toFixed(1)}%`;
-
-                // Update trend indicators for all running bots
-                updateTrendIndicators();
-
-            } catch (error) {
-                console.error('Error updating dashboard:', error);
-            }
+                await fetch('/api/exchange/disconnect', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ exchange: selectedExchange.id })
+                });
+                delete connectedExchanges[selectedExchange.id];
+                document.getElementById(`ex-${selectedExchange.id}`).classList.remove('connected');
+                document.getElementById(`ex-status-${selectedExchange.id}`).textContent = 'Not connected';
+                document.getElementById(`ex-status-${selectedExchange.id}`).classList.remove('connected');
+                document.getElementById('pairs-section').style.display = 'none';
+                showAlert(`${selectedExchange.name} disconnected`, 'info');
+            } catch(e) {}
         }
 
-        // Load all positions (including manual trades)
-        async function loadAllPositions() {
+        async function loadPairs(exchangeId) {
             try {
-                const response = await fetch('/api/positions/all');
-                const result = await response.json();
-
-                if (result.success && result.data) {
-                    updatePositionsDisplay(result.data);
+                const resp = await fetch(`/api/exchange/pairs?exchange=${exchangeId}`);
+                const result = await resp.json();
+                if (result.success) {
+                    availablePairs = result.data;
+                    selectedPairs.clear();
+                    renderPairs();
+                    document.getElementById('pairs-section').style.display = 'block';
                 }
-            } catch (error) {
-                console.error('Error loading positions:', error);
-            }
+            } catch(e) {}
         }
 
-        // Update trend indicators for all running bots
-        async function updateTrendIndicators() {
-            for (const slot of botSlots) {
-                if (slot.running && slot.botId) {
-                    try {
-                        const response = await fetch(`/api/bot/${slot.botId}/trend`);
-                        const result = await response.json();
-
-                        if (result.success) {
-                            const trendData = result.data;
-                            const trendEl = document.getElementById(`trend-${slot.id}`);
-                            const trendDirEl = document.getElementById(`trend-direction-${slot.id}`);
-
-                            if (trendData.trend_break) {
-                                // Слом тренда
-                                trendEl.style.background = '#fbbf24';
-                                trendEl.style.color = '#78350f';
-                                trendDirEl.innerHTML = `⚠️ СЛОМ ТРЕНДА<br>${trendData.direction === 'BUY' ? '📈 BUY' : '📉 SELL'}`;
-                            } else if (trendData.direction === 'BUY') {
-                                // Восходящий тренд
-                                trendEl.style.background = '#10b981';
-                                trendEl.style.color = '#ffffff';
-                                trendDirEl.textContent = '📈 BUY';
-                            } else if (trendData.direction === 'SELL') {
-                                // Нисходящий тренд
-                                trendEl.style.background = '#ef4444';
-                                trendEl.style.color = '#ffffff';
-                                trendDirEl.textContent = '📉 SELL';
-                            } else {
-                                // Нет тренда
-                                trendEl.style.background = '#1f2937';
-                                trendEl.style.color = '#9ca3af';
-                                trendDirEl.textContent = '—';
-                            }
-                        }
-                    } catch (error) {
-                        console.error(`Error updating trend for bot ${slot.botId}:`, error);
-                    }
-                }
-            }
+        function renderPairs() {
+            const grid = document.getElementById('pairs-grid');
+            grid.innerHTML = availablePairs.map(p => `
+                <div class="pair-chip" id="pair-${p}" onclick="togglePair('${p}')">${p}</div>
+            `).join('');
         }
 
-        // Update positions display
-        function updatePositionsDisplay(positions) {
-            const container = document.getElementById('positions-container');
-
-            if (!positions || positions.length === 0) {
-                container.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 20px;">Нет открытых позиций</p>';
-                return;
+        function togglePair(pair) {
+            if (selectedPairs.has(pair)) {
+                selectedPairs.delete(pair);
+                document.getElementById(`pair-${pair}`).classList.remove('selected');
+            } else {
+                selectedPairs.add(pair);
+                document.getElementById(`pair-${pair}`).classList.add('selected');
             }
+            updateBotSlots();
+        }
 
-            let html = '<table style="width:100%; border-collapse: collapse;"><thead><tr style="background:#f9fafb;"><th style="padding:12px; text-align:left;">Аккаунт</th><th style="padding:12px; text-align:left;">Символ</th><th style="padding:12px; text-align:left;">Направление</th><th style="padding:12px; text-align:left;">Размер</th><th style="padding:12px; text-align:left;">Цена входа</th><th style="padding:12px; text-align:left;">PnL</th><th style="padding:12px; text-align:left;">Источник</th></tr></thead><tbody>';
+        function selectAllPairs() {
+            availablePairs.forEach(p => selectedPairs.add(p));
+            document.querySelectorAll('.pair-chip').forEach(c => c.classList.add('selected'));
+            updateBotSlots();
+        }
 
-            positions.forEach(pos => {
-                const pnlClass = pos.pnl >= 0 ? 'positive' : 'negative';
-                const pnlColor = pos.pnl >= 0 ? '#10b981' : '#ef4444';
-                const pnlPercent = pos.entry_price > 0 ? ((pos.pnl / (pos.entry_price * pos.size)) * 100) : 0;
+        function deselectAllPairs() {
+            selectedPairs.clear();
+            document.querySelectorAll('.pair-chip').forEach(c => c.classList.remove('selected'));
+            updateBotSlots();
+        }
 
-                // Determine source badge
-                const isManual = pos.bot_id === 'manual';
-                const sourceBadge = isManual
-                    ? '<span style="padding:4px 8px; border-radius:6px; font-size:11px; background:#fbbf24; color:#78350f;">✋ Ручная</span>'
-                    : '<span style="padding:4px 8px; border-radius:6px; font-size:11px; background:#667eea; color:#fff;">🤖 Бот</span>';
-
-                html += `<tr style="border-bottom:1px solid #e5e7eb;">
-                    <td style="padding:12px; font-size:13px; color:#6b7280;">${pos.account_name || 'N/A'}</td>
-                    <td style="padding:12px; font-weight:600;">${pos.symbol}</td>
-                    <td style="padding:12px;"><span style="padding:4px 12px; border-radius:12px; font-size:12px; font-weight:600; background:${pos.side === 'Buy' ? '#d1fae5' : '#fee2e2'}; color:${pos.side === 'Buy' ? '#065f46' : '#991b1b'};">${pos.side === 'Buy' ? 'LONG' : 'SHORT'}</span></td>
-                    <td style="padding:12px;">${pos.size.toFixed(4)}</td>
-                    <td style="padding:12px;">$${pos.entry_price.toFixed(2)}</td>
-                    <td style="padding:12px; color:${pnlColor}; font-weight:600;">$${pos.unrealized_pnl ? pos.unrealized_pnl.toFixed(2) : pos.pnl.toFixed(2)} (${pnlPercent.toFixed(2)}%)</td>
-                    <td style="padding:12px;">${sourceBadge}</td>
-                </tr>`;
+        function updateBotSlots() {
+            const pairs = Array.from(selectedPairs);
+            botSlots.forEach((slot, i) => {
+                slot.symbol = pairs[i] || null;
+                slot.exchange = slot.symbol ? selectedExchange?.id : null;
             });
-
-            html += '</tbody></table>';
-            container.innerHTML = html;
+            renderBotSlots();
         }
 
-        // Update trading signals
-        function updateTradingSignals(signals) {
-            const container = document.getElementById('signals-list');
-
-            if (!signals || signals.length === 0) {
-                container.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 20px;">Нет сигналов</p>';
-                return;
-            }
-
-            let html = '<div style="display: flex; flex-direction: column; gap: 12px;">';
-            signals.forEach(signal => {
-                const isBuy = signal.type === 'buy';
-                const bgColor = isBuy ? '#d1fae5' : '#fee2e2';
-                const textColor = isBuy ? '#065f46' : '#991b1b';
-                const icon = isBuy ? '📈' : '📉';
-
-                html += `<div style="padding: 12px; background: ${bgColor}; border-radius: 8px; border-left: 4px solid ${textColor};">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <span style="font-size: 18px;">${icon}</span>
-                            <span style="font-weight: 600; color: ${textColor}; margin-left: 8px;">${signal.type.toUpperCase()}</span>
-                            <span style="margin-left: 8px; color: #374151;">${signal.symbol}</span>
-                        </div>
-                        <div style="font-size: 12px; color: #6b7280;">${signal.time}</div>
+        function renderBotSlots() {
+            const grid = document.getElementById('bots-grid');
+            grid.innerHTML = botSlots.map(slot => `
+                <div class="bot-slot ${slot.running ? 'running' : ''}" id="slot-${slot.id}">
+                    <div class="bot-slot-header">
+                        <div class="bot-slot-title">#${slot.id}</div>
+                        <div class="bot-dot ${slot.running ? 'active' : ''}"></div>
                     </div>
-                    ${signal.price ? `<div style="margin-top: 4px; font-size: 13px; color: #6b7280;">Цена: $${signal.price.toFixed(2)}</div>` : ''}
-                </div>`;
-            });
-            html += '</div>';
-            container.innerHTML = html;
+                    <select disabled>
+                        <option>${slot.symbol || 'No pair selected'}</option>
+                    </select>
+                    <div class="trend-box trend-neutral" id="trend-${slot.id}">No trend</div>
+                    <div class="bot-controls">
+                        <button class="btn btn-success" onclick="startBot(${slot.id})" ${!slot.symbol || slot.running ? 'disabled' : ''}>Start</button>
+                        <button class="btn btn-danger" onclick="stopBot(${slot.id})" ${!slot.running ? 'disabled' : ''}>Stop</button>
+                    </div>
+                    <div class="bot-info ${slot.running ? 'active' : ''}" id="info-${slot.id}">
+                        ${slot.running ? `Running: ${slot.symbol}` : 'Idle'}
+                    </div>
+                </div>
+            `).join('');
         }
 
-        // Update recent trades
-        function updateRecentTrades(trades) {
-            const container = document.getElementById('recent-trades-list');
-
-            if (!trades || trades.length === 0) {
-                container.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 20px;">Нет недавних сделок</p>';
+        async function startBot(slotId) {
+            const slot = botSlots[slotId - 1];
+            if (!slot.symbol || !slot.exchange) {
+                showAlert('Select a pair first', 'error');
                 return;
             }
-
-            let html = '<div style="display: flex; flex-direction: column; gap: 10px;">';
-            trades.forEach(trade => {
-                const isProfit = trade.pnl >= 0;
-                const pnlColor = isProfit ? '#10b981' : '#ef4444';
-                const icon = isProfit ? '✅' : '❌';
-
-                html += `<div style="padding: 10px; background: #f9fafb; border-radius: 6px; border-left: 3px solid ${pnlColor};">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <span>${icon}</span>
-                            <span style="font-weight: 600; margin-left: 8px;">${trade.symbol}</span>
-                            <span style="margin-left: 8px; font-size: 12px; color: #6b7280;">${trade.direction}</span>
-                        </div>
-                        <div style="font-weight: 600; color: ${pnlColor};">$${trade.pnl.toFixed(2)}</div>
-                    </div>
-                    <div style="margin-top: 4px; font-size: 12px; color: #6b7280;">${trade.time}</div>
-                </div>`;
-            });
-            html += '</div>';
-            container.innerHTML = html;
+            try {
+                const resp = await fetch('/api/multibot/start', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        exchange: slot.exchange,
+                        symbol: slot.symbol,
+                        timeframe: 15,
+                        supertrend_multiplier: 3.0
+                    })
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    slot.running = true;
+                    slot.botId = result.bot_id;
+                    renderBotSlots();
+                    showAlert(`Bot #${slotId} started: ${slot.symbol}`, 'success');
+                } else {
+                    showAlert(result.error || 'Failed to start', 'error');
+                }
+            } catch(e) { showAlert('Error starting bot', 'error'); }
         }
 
-        // Sync bot slots with running bots from server
-        async function syncBotsWithServer() {
+        async function stopBot(slotId) {
+            const slot = botSlots[slotId - 1];
+            if (!slot.botId) return;
             try {
-                const response = await fetch('/api/bots/running');
-                const result = await response.json();
+                await fetch('/api/multibot/stop', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ bot_id: slot.botId })
+                });
+                slot.running = false;
+                slot.botId = null;
+                renderBotSlots();
+                showAlert(`Bot #${slotId} stopped`, 'success');
+            } catch(e) {}
+        }
 
+        async function loadRunningBots() {
+            try {
+                const resp = await fetch('/api/bots/running');
+                const result = await resp.json();
                 if (result.success && result.data) {
-                    const runningBots = result.data;
-
-                    // Update bot slots with running bots info
-                    runningBots.forEach(bot => {
-                        // Find matching slot by symbol
-                        const slot = botSlots.find(s => s.symbol === bot.symbol);
+                    result.data.forEach(bot => {
+                        const slot = botSlots.find(s => s.botId === bot.bot_id);
                         if (slot) {
                             slot.running = bot.is_running;
-                            slot.botId = bot.bot_id;
-                            // Save bot parameters to prevent reset on page reload
-                            if (bot.timeframe) slot.timeframe = bot.timeframe;
-                            if (bot.supertrend_multiplier) slot.multiplier = bot.supertrend_multiplier;
-                            if (bot.atr_period) slot.atrPeriod = bot.atr_period;
-                            updateSlotUI(slot.id);
+                            slot.symbol = bot.symbol;
                         }
                     });
-
-                    updateStats();
-                    console.log(`Synced ${runningBots.length} running bots from server`);
+                    renderBotSlots();
                 }
-            } catch (error) {
-                console.error('Error syncing bots:', error);
+            } catch(e) {}
+            loadPositions();
+        }
+
+        async function loadPositions() {
+            try {
+                const resp = await fetch('/api/positions/all');
+                const result = await resp.json();
+                if (result.success && result.data) {
+                    const tbody = document.getElementById('positions-body');
+                    if (result.data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#64748b;">No open positions</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = result.data.map(p => {
+                        const pnlClass = (p.pnl || p.unrealized_pnl || 0) >= 0 ? 'positive' : 'negative';
+                        return `<tr>
+                            <td>${p.exchange || 'N/A'}</td>
+                            <td style="font-weight:600;">${p.symbol}</td>
+                            <td><span style="padding:2px 8px; border-radius:4px; font-size:11px; background:${p.side==='Buy'?'#065f46':'#7f1d1d'}; color:${p.side==='Buy'?'#34d399':'#fca5a5'};">${p.side==='Buy'?'LONG':'SHORT'}</span></td>
+                            <td>${p.size}</td>
+                            <td>$${p.entry_price}</td>
+                            <td class="${pnlClass}">$${(p.pnl || p.unrealized_pnl || 0).toFixed(2)}</td>
+                            <td>${p.bot_id === 'manual' ? 'Manual' : 'Bot'}</td>
+                        </tr>`;
+                    }).join('');
+                }
+            } catch(e) {}
+        }
+
+        function showAlert(msg, type='info') {
+            const c = document.getElementById('alert-container');
+            const a = document.createElement('div');
+            a.className = `alert alert-${type}`;
+            a.textContent = msg;
+            c.appendChild(a);
+            setTimeout(() => a.remove(), 4000);
+        }
+
+        // Load webhook URL
+        async function loadWebhookUrl() {
+            try {
+                const resp = await fetch('/api/config');
+                const result = await resp.json();
+                if (result.success) {
+                    const port = result.data.webhook_port || 5001;
+                    document.getElementById('webhook-url').textContent = `http://YOUR-SERVER:${port}/tradingview/webhook`;
+                }
+            } catch(e) {
+                document.getElementById('webhook-url').textContent = 'http://YOUR-SERVER:5001/tradingview/webhook';
             }
         }
 
-        // Initialize
-        initializeBotSlots();
-        loadAccounts();
-        updateDashboard();
-        loadTradeHistory();
+        // Auto-refresh
+        setInterval(loadRunningBots, 5000);
 
-        // Sync with server after initialization
-        setTimeout(syncBotsWithServer, 1000);
-
-        setInterval(updateDashboard, 15000); // Changed from 3s to 15s to reduce API load
-
-        // Update balance every 30 seconds if account is active
-        setInterval(() => {
-            if (activeAccount) {
-                loadAccountBalance(activeAccount.account_id);
-            }
-        }, 30000); // Changed from 10s to 30s
-
-        // Sync bots every 60 seconds
-        setInterval(syncBotsWithServer, 60000); // Changed from 30s to 60s
-
-        // Update trade history every 60 seconds
-        setInterval(loadTradeHistory, 60000);
+        // Init
+        initExchangeGrid();
+        loadWebhookUrl();
+        renderBotSlots();
     </script>
 </body>
 </html>

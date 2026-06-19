@@ -551,21 +551,122 @@ def api_exchanges():
     })
 
 
+@app.route('/api/exchange/connect', methods=['POST'])
+def api_connect_exchange():
+    """Connect to an exchange.
+
+    Request JSON:
+        {
+            "exchange": "okx|bybit|bingx|gate|bitget|pionex|weex|toobit",
+            "api_key": "...",
+            "api_secret": "...",
+            "passphrase": "..." (optional),
+            "testnet": true|false
+        }
+    """
+    try:
+        data = request.get_json()
+        exchange = data.get('exchange', '').lower()
+        api_key = data.get('api_key', '')
+        api_secret = data.get('api_secret', '')
+        passphrase = data.get('passphrase', '')
+        testnet = data.get('testnet', True)
+
+        if not exchange or not api_key or not api_secret:
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+
+        from .exchange_factory import ExchangeFactory
+        if exchange not in ExchangeFactory.get_supported_exchanges():
+            return jsonify({'success': False, 'error': f'Unsupported exchange: {exchange}'}), 400
+
+        # Store connection in module state
+        if not hasattr(app, '_exchange_connections'):
+            app._exchange_connections = {}
+
+        app._exchange_connections[exchange] = {
+            'api_key': api_key,
+            'api_secret': api_secret,
+            'passphrase': passphrase,
+            'testnet': testnet
+        }
+
+        logger.info(f"Exchange connected: {exchange} (testnet={testnet})")
+        return jsonify({'success': True, 'message': f'{exchange} connected'})
+
+    except Exception as e:
+        logger.error(f"Error connecting exchange: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/exchange/disconnect', methods=['POST'])
+def api_disconnect_exchange():
+    """Disconnect from an exchange."""
+    try:
+        data = request.get_json()
+        exchange = data.get('exchange', '').lower()
+
+        if hasattr(app, '_exchange_connections') and exchange in app._exchange_connections:
+            del app._exchange_connections[exchange]
+
+        logger.info(f"Exchange disconnected: {exchange}")
+        return jsonify({'success': True, 'message': f'{exchange} disconnected'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/exchange/pairs', methods=['GET'])
+def api_get_pairs():
+    """Get trading pairs from connected exchange.
+
+    Query params:
+        exchange: Exchange name
+    """
+    try:
+        exchange = request.args.get('exchange', '').lower()
+
+        if not hasattr(app, '_exchange_connections') or exchange not in app._exchange_connections:
+            return jsonify({'success': False, 'error': 'Exchange not connected'}), 400
+
+        conn = app._exchange_connections[exchange]
+
+        # Get exchange info to find available pairs
+        try:
+            # Try to get all instruments
+            if exchange == 'okx':
+                from okx.api import PublicData
+                public = PublicData.PublicAPI(conn['api_key'], conn['api_secret'], conn.get('passphrase', ''), False, '1' if conn.get('testnet') else '0')
+                resp = public.get_instruments(instType="SWAP")
+                pairs = [inst['instId'] for inst in resp.get('data', []) if 'USDT' in inst.get('instId', '')]
+            elif exchange == 'bybit':
+                from pybit.unified_trading import HTTP
+                session = HTTP(testnet=conn.get('testnet'), api_key=conn['api_key'], api_secret=conn['api_secret'])
+                resp = session.get_instruments_info(category="linear")
+                pairs = [inst['symbol'] for inst in resp.get('result', {}).get('list', []) if 'USDT' in inst.get('symbol', '')]
+            elif exchange == 'gate':
+                pairs = []  # Would need Gate API call
+            elif exchange == 'bitget':
+                pairs = []  # Would need Bitget API call
+            else:
+                pairs = []
+
+            # Limit to 50 pairs
+            pairs = sorted(pairs)[:50]
+
+            return jsonify({'success': True, 'data': pairs})
+        except Exception as e:
+            logger.error(f"Error fetching pairs: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/config', methods=['GET'])
 def api_get_config():
-    """Get current configuration.
-
-    Returns:
-        JSON with config
-    """
+    """Get current configuration."""
     global _config_instance
-
     if _config_instance is None:
-        return jsonify({
-            'success': False,
-            'error': 'Config not available'
-        }), 400
-
+        return jsonify({'success': False, 'error': 'Config not available'}), 400
     return jsonify({
         'success': True,
         'data': {
@@ -574,6 +675,7 @@ def api_get_config():
             'supertrend_multiplier': _config_instance.supertrend_multiplier,
             'atr_period': _config_instance.atr_period,
             'trading_mode': _config_instance.trading_mode.value,
+            'webhook_port': getattr(_config_instance, 'webhook_port', 5001),
         }
     })
 
