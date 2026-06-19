@@ -6,6 +6,11 @@ from .exchange_client import ExchangeClient
 from .okx_client import OKXClient
 from .bybit_client import BybitClient
 from .bingx_client import BingXClient
+from .gate_client import GateClient
+from .bitget_client import BitgetClient
+from .pionex_client import PionexClient
+from .weex_client import WeexClient
+from .toobit_client import ToobitClient
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +22,14 @@ class ExchangeFactory:
         "okx": OKXClient,
         "bybit": BybitClient,
         "bingx": BingXClient,
+        "gate": GateClient,
+        "bitget": BitgetClient,
+        "pionex": PionexClient,
+        "weex": WeexClient,
+        "toobit": ToobitClient,
     }
+
+    PASSPHRASE_REQUIRED = {"okx", "bitget"}
 
     @staticmethod
     def create_client(
@@ -30,10 +42,10 @@ class ExchangeFactory:
         """Create exchange client instance.
 
         Args:
-            exchange: Exchange name (okx, bybit, bingx)
+            exchange: Exchange name (okx, bybit, bingx, gate, bitget, pionex, weex, toobit)
             api_key: API key
             api_secret: API secret
-            passphrase: API passphrase (required for OKX)
+            passphrase: API passphrase (required for OKX, Bitget)
             testnet: Use testnet/demo mode
 
         Returns:
@@ -52,32 +64,19 @@ class ExchangeFactory:
 
         client_class = ExchangeFactory.SUPPORTED_EXCHANGES[exchange]
 
-        # OKX requires passphrase
-        if exchange == "okx":
+        if exchange in ExchangeFactory.PASSPHRASE_REQUIRED:
             if not passphrase:
-                raise ValueError("OKX requires passphrase parameter")
+                raise ValueError(f"{exchange.upper()} requires passphrase parameter")
             return client_class(api_key, api_secret, passphrase, testnet)
 
-        # Other exchanges don't need passphrase
         return client_class(api_key, api_secret, testnet)
 
     @staticmethod
     def get_supported_exchanges() -> list:
-        """Get list of supported exchanges.
-
-        Returns:
-            List of exchange names
-        """
+        """Get list of supported exchanges."""
         return list(ExchangeFactory.SUPPORTED_EXCHANGES.keys())
 
     @staticmethod
     def requires_passphrase(exchange: str) -> bool:
-        """Check if exchange requires passphrase.
-
-        Args:
-            exchange: Exchange name
-
-        Returns:
-            True if passphrase is required
-        """
-        return exchange.lower() == "okx"
+        """Check if exchange requires passphrase."""
+        return exchange.lower() in ExchangeFactory.PASSPHRASE_REQUIRED

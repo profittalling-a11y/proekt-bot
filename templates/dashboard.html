@@ -419,6 +419,11 @@
                         <option value="okx">OKX</option>
                         <option value="bybit">Bybit</option>
                         <option value="bingx">BingX</option>
+                        <option value="gate">Gate.io</option>
+                        <option value="bitget">Bitget</option>
+                        <option value="pionex">Pionex</option>
+                        <option value="weex">Weex</option>
+                        <option value="toobit">Toobit</option>
                     </select>
                 </div>
 
@@ -866,7 +871,7 @@
         function updatePassphraseField() {
             const exchange = document.getElementById('new-account-exchange').value;
             const passphraseGroup = document.getElementById('passphrase-group');
-            passphraseGroup.style.display = exchange === 'okx' ? 'block' : 'none';
+            passphraseGroup.style.display = (exchange === 'okx' || exchange === 'bitget') ? 'block' : 'none';
         }
 
         // Create new account
@@ -889,8 +894,8 @@
                 return;
             }
 
-            if (exchange === 'okx' && !passphrase) {
-                showAlert('Для OKX требуется Passphrase', 'error');
+            if ((exchange === 'okx' || exchange === 'bitget') && !passphrase) {
+                showAlert(`Для ${exchange.toUpperCase()} требуется Passphrase`, 'error');
                 return;
             }
 

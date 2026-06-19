@@ -18,6 +18,11 @@ class Exchange(str, Enum):
     OKX = "okx"
     BYBIT = "bybit"
     BINGX = "bingx"
+    GATE = "gate"
+    BITGET = "bitget"
+    PIONEX = "pionex"
+    WEEX = "weex"
+    TOOBIT = "toobit"
 
 
 class Config(BaseSettings):
@@ -48,6 +53,22 @@ class Config(BaseSettings):
 
     bingx_api_key: str = Field(default="", description="BingX API Key")
     bingx_api_secret: str = Field(default="", description="BingX API Secret")
+
+    gate_api_key: str = Field(default="", description="Gate.io API Key")
+    gate_api_secret: str = Field(default="", description="Gate.io API Secret")
+
+    bitget_api_key: str = Field(default="", description="Bitget API Key")
+    bitget_api_secret: str = Field(default="", description="Bitget API Secret")
+    bitget_passphrase: str = Field(default="", description="Bitget API Passphrase")
+
+    pionex_api_key: str = Field(default="", description="Pionex API Key")
+    pionex_api_secret: str = Field(default="", description="Pionex API Secret")
+
+    weex_api_key: str = Field(default="", description="Weex API Key")
+    weex_api_secret: str = Field(default="", description="Weex API Secret")
+
+    toobit_api_key: str = Field(default="", description="Toobit API Key")
+    toobit_api_secret: str = Field(default="", description="Toobit API Secret")
 
     # Trading Mode
     trading_mode: TradingMode = Field(default=TradingMode.TESTNET)
@@ -159,6 +180,34 @@ class Config(BaseSettings):
             return {
                 "api_key": self.bingx_api_key,
                 "api_secret": self.bingx_api_secret,
+            }
+        elif self.exchange == Exchange.GATE:
+            return {
+                "api_key": self.gate_api_key,
+                "api_secret": self.gate_api_secret,
+            }
+        elif self.exchange == Exchange.BITGET:
+            creds = {
+                "api_key": self.bitget_api_key,
+                "api_secret": self.bitget_api_secret,
+            }
+            if self.bitget_passphrase:
+                creds["passphrase"] = self.bitget_passphrase
+            return creds
+        elif self.exchange == Exchange.PIONEX:
+            return {
+                "api_key": self.pionex_api_key,
+                "api_secret": self.pionex_api_secret,
+            }
+        elif self.exchange == Exchange.WEEX:
+            return {
+                "api_key": self.weex_api_key,
+                "api_secret": self.weex_api_secret,
+            }
+        elif self.exchange == Exchange.TOOBIT:
+            return {
+                "api_key": self.toobit_api_key,
+                "api_secret": self.toobit_api_secret,
             }
 
         return {}
@@ -301,6 +350,34 @@ class Config(BaseSettings):
             if "-" not in symbol and symbol.endswith("USDT"):
                 base = symbol[:-4]
                 symbol = f"{base}-USDT"
+        elif self.exchange == Exchange.GATE:
+            # Gate.io format: BTC_USDT
+            symbol = symbol.replace("-SWAP", "").replace("-", "_")
+            if not symbol.endswith("_USDT"):
+                if symbol.endswith("-USDT"):
+                    symbol = symbol.replace("-USDT", "_USDT")
+                elif not symbol.endswith("_USDT"):
+                    symbol = f"{symbol}_USDT"
+        elif self.exchange == Exchange.BITGET:
+            # Bitget format: BTCUSDT
+            symbol = symbol.replace("-SWAP", "").replace("-", "").replace("_", "")
+            if not symbol.endswith("USDT"):
+                symbol = f"{symbol}USDT"
+        elif self.exchange == Exchange.PIONEX:
+            # Pionex format: BTCUSDT (Binance-compatible)
+            symbol = symbol.replace("-SWAP", "").replace("-", "").replace("_", "")
+            if not symbol.endswith("USDT"):
+                symbol = f"{symbol}USDT"
+        elif self.exchange == Exchange.WEEX:
+            # Weex format: BTC-USDT
+            if "-" not in symbol and symbol.endswith("USDT"):
+                base = symbol[:-4]
+                symbol = f"{base}-USDT"
+        elif self.exchange == Exchange.TOOBIT:
+            # Toobit format: BTCUSDT
+            symbol = symbol.replace("-SWAP", "").replace("-", "").replace("_", "")
+            if not symbol.endswith("USDT"):
+                symbol = f"{symbol}USDT"
 
         return symbol
 
