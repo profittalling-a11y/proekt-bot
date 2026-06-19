@@ -20,7 +20,6 @@ _risk_manager: Optional[RiskManager] = None
 _telegram: Optional[TelegramNotifier] = None
 
 _active_positions: Dict[str, Dict] = {}
-_trend_state: Dict[str, str] = {}
 
 
 def init_webhook_handler(config: Config):
@@ -90,11 +89,6 @@ def tradingview_webhook():
         symbol = _normalize_symbol(symbol)
         logger.info(f"TradingView webhook: {action.upper()} {symbol} @ {price}")
 
-        # Trend change detection - skip false signals
-        if not _is_valid_trend_signal(symbol, action):
-            logger.info(f"Skipping false signal: {action.upper()} {symbol} (no trend change)")
-            return jsonify({'success': True, 'message': 'Signal skipped (no trend change)'}), 200
-
         if action == 'buy':
             result = _open_long(symbol, price)
         elif action == 'sell':
@@ -109,30 +103,6 @@ def tradingview_webhook():
     except Exception as e:
         logger.error(f"Error processing webhook: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
-
-
-def _is_valid_trend_signal(symbol: str, action: str) -> bool:
-    """Check if signal represents a real trend change.
-
-    Skips signals that don't represent a trend reversal:
-    - If current trend is 'buy' and new signal is 'buy' -> skip
-    - If current trend is 'sell' and new signal is 'sell' -> skip
-    - Only process when trend actually changes direction
-    """
-    current_trend = _trend_state.get(symbol)
-
-    if current_trend is None:
-        # First signal for this symbol - always valid
-        _trend_state[symbol] = action
-        return True
-
-    if current_trend == action:
-        # Same direction as current trend - false signal, skip
-        return False
-
-    # Trend changed - valid signal
-    _trend_state[symbol] = action
-    return True
 
 
 def _normalize_symbol(symbol: str) -> str:
