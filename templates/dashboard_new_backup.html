@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Bot Trading Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container { max-width: 1600px; margin: 0 auto; }
+
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 { font-size: 28px; color: #667eea; }
+        .header-right { display: flex; align-items: center; gap: 15px; }
+
+        .exchange-badge {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            background: #f3f4f6;
+            color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5568d3; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-secondary { background: #6b7280; color: white; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .stat-label { font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .stat-value { font-size: 28px; font-weight: 700; color: #333; }
+
+        /* Bot Slots Grid */
+        .bots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .bot-slot {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 3px solid #e5e7eb;
+            transition: all 0.3s;
+        }
+
+        .bot-slot.active {
+            border-color: #10b981;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.2);
+        }
+
+        .bot-slot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f3f4f6;
+        }
+
+        .bot-slot-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .bot-status {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #e5e7eb;
+        }
+
+        .bot-status.running { background: #10b981; animation: pulse 2s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #374151;
+            font-size: 13px;
+        }
+
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .bot-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .bot-controls button {
+            flex: 1;
+            padding: 10px;
+            font-size: 13px;
+        }
+
+        .bot-info {
+            margin-top: 12px;
+            padding: 10px;
+            background: #f9fafb;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .bot-info.active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .alert-success { background: #d1fae5; color: #065f46; border: 1px solid #10b981; }
+        .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #ef4444; }
+        .alert-info { background: #dbeafe; color: #1e40af; border: 1px solid #3b82f6; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show { display: flex; }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 { font-size: 20px; color: #667eea; }
+        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280; }
+
+        .account-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .account-item {
+            padding: 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .account-item:hover { border-color: #667eea; }
+        .account-item.active { border-color: #10b981; background: #f0fdf4; }
+
+        .account-name { font-weight: 600; font-size: 16px; color: #333; }
+        .account-details { font-size: 12px; color: #6b7280; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🤖 Multi-Bot Trading Dashboard</h1>
+            <div class="header-right">
+                <span class="exchange-badge" id="exchange-badge">OKX</span>
+                <button class="btn btn-secondary" id="accounts-btn">👤 Аккаунты</button>
+            </div>
+        </div>
+
+        <!-- Alert Messages -->
+        <div id="alert-container"></div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">💰 Баланс</div>
+                <div class="stat-value" id="balance">$0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">📈 Equity</div>
+                <div class="stat-value" id="equity">$0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">🤖 Активных ботов</div>
+                <div class="stat-value" id="active-bots">0 / 10</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">💵 Общий PnL</div>
+                <div class="stat-value" id="total-pnl">$0.00</div>
+            </div>
+        </div>
+
+        <!-- Bot Slots -->
+        <div class="bots-grid" id="bots-grid">
+            <!-- Bot slots will be generated here -->
+        </div>
+    </div>
+
+    <!-- Accounts Modal -->
+    <div class="modal" id="accounts-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>👤 Выбор аккаунта</h2>
+                <button class="modal-close" id="close-modal">×</button>
+            </div>
+            <div class="account-list" id="account-list">
+                <p style="color: #6b7280; text-align: center; padding: 20px;">Загрузка...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Available trading pairs
+        const AVAILABLE_PAIRS = [
+            'BTC-USDT-SWAP', 'ETH-USDT-SWAP', 'SOL-USDT-SWAP', 'BNB-USDT-SWAP',
+            'XRP-USDT-SWAP', 'ADA-USDT-SWAP', 'DOGE-USDT-SWAP', 'MATIC-USDT-SWAP',
+            'DOT-USDT-SWAP', 'AVAX-USDT-SWAP', 'LINK-USDT-SWAP', 'UNI-USDT-SWAP',
+            'ATOM-USDT-SWAP', 'LTC-USDT-SWAP', 'BCH-USDT-SWAP', 'FIL-USDT-SWAP'
+        ];
+
+        // Bot slots state
+        let botSlots = [];
+        let activeAccount = null;
+
+        // Initialize 10 bot slots
+        function initializeBotSlots() {
+            const grid = document.getElementById('bots-grid');
+            grid.innerHTML = '';
+
+            for (let i = 1; i <= 10; i++) {
+                const slot = {
+                    id: i,
+                    symbol: AVAILABLE_PAIRS[i - 1] || AVAILABLE_PAIRS[0],
+                    timeframe: 15,
+                    multiplier: 3.0,
+                    running: false,
+                    botId: null
+                };
+                botSlots.push(slot);
+
+                const slotHtml = `
+                    <div class="bot-slot" id="slot-${i}">
+                        <div class="bot-slot-header">
+                            <div class="bot-slot-title">Бот #${i}</div>
+                            <div class="bot-status" id="status-${i}"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Торговая пара</label>
+                            <select id="symbol-${i}" onchange="updateSlot(${i}, 'symbol', this.value)">
+                                ${AVAILABLE_PAIRS.map(pair =>
+                                    `<option value="${pair}" ${pair === slot.symbol ? 'selected' : ''}>${pair}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Таймфрейм</label>
+                            <select id="timeframe-${i}" onchange="updateSlot(${i}, 'timeframe', this.value)">
+                                <option value="5">5 минут</option>
+                                <option value="10">10 минут</option>
+                                <option value="15" selected>15 минут</option>
+                                <option value="30">30 минут</option>
+                                <option value="60">1 час</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Supertrend Multiplier</label>
+                            <input type="number" id="multiplier-${i}" min="1" max="10" step="0.1" value="3.0"
+                                   onchange="updateSlot(${i}, 'multiplier', this.value)">
+                        </div>
+
+                        <div class="bot-controls">
+                            <button class="btn btn-success" id="start-${i}" onclick="startBot(${i})">▶️ Старт</button>
+                            <button class="btn btn-danger" id="stop-${i}" onclick="stopBot(${i})" disabled>⏹️ Стоп</button>
+                        </div>
+
+                        <div class="bot-info" id="info-${i}">
+                            Не запущен
+                        </div>
+                    </div>
+                `;
+                grid.innerHTML += slotHtml;
+            }
+        }
+
+        // Update slot configuration
+        function updateSlot(slotId, field, value) {
+            const slot = botSlots.find(s => s.id === slotId);
+            if (slot) {
+                slot[field] = field === 'multiplier' ? parseFloat(value) :
+                              field === 'timeframe' ? parseInt(value) : value;
+            }
+        }
+
+        // Start bot for slot
+        async function startBot(slotId) {
+            if (!activeAccount) {
+                showAlert('Выберите аккаунт для торговли', 'error');
+                document.getElementById('accounts-modal').classList.add('show');
+                return;
+            }
+
+            const slot = botSlots.find(s => s.id === slotId);
+            if (!slot) return;
+
+            try {
+                const response = await fetch('/api/multibot/start', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        account_id: activeAccount.account_id,
+                        symbol: slot.symbol,
+                        timeframe: slot.timeframe,
+                        supertrend_multiplier: slot.multiplier
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    slot.running = true;
+                    slot.botId = result.bot_id;
+                    updateSlotUI(slotId);
+                    showAlert(`Бот #${slotId} запущен для ${slot.symbol}`, 'success');
+                    updateStats();
+                } else {
+                    showAlert(result.error || 'Ошибка запуска бота', 'error');
+                }
+            } catch (error) {
+                showAlert('Ошибка соединения с сервером', 'error');
+            }
+        }
+
+        // Stop bot for slot
+        async function stopBot(slotId) {
+            const slot = botSlots.find(s => s.id === slotId);
+            if (!slot || !slot.running) return;
+
+            try {
+                const response = await fetch('/api/multibot/stop', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        bot_id: slot.botId
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    slot.running = false;
+                    slot.botId = null;
+                    updateSlotUI(slotId);
+                    showAlert(`Бот #${slotId} остановлен`, 'success');
+                    updateStats();
+                } else {
+                    showAlert(result.error || 'Ошибка остановки бота', 'error');
+                }
+            } catch (error) {
+                showAlert('Ошибка соединения с сервером', 'error');
+            }
+        }
+
+        // Update slot UI
+        function updateSlotUI(slotId) {
+            const slot = botSlots.find(s => s.id === slotId);
+            if (!slot) return;
+
+            const slotEl = document.getElementById(`slot-${slotId}`);
+            const statusEl = document.getElementById(`status-${slotId}`);
+            const startBtn = document.getElementById(`start-${slotId}`);
+            const stopBtn = document.getElementById(`stop-${slotId}`);
+            const infoEl = document.getElementById(`info-${slotId}`);
+
+            if (slot.running) {
+                slotEl.classList.add('active');
+                statusEl.classList.add('running');
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                infoEl.classList.add('active');
+                infoEl.textContent = `🟢 Работает: ${slot.symbol} • ${slot.timeframe}m • ST ${slot.multiplier}`;
+            } else {
+                slotEl.classList.remove('active');
+                statusEl.classList.remove('running');
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                infoEl.classList.remove('active');
+                infoEl.textContent = 'Не запущен';
+            }
+        }
+
+        // Update stats
+        function updateStats() {
+            const activeBots = botSlots.filter(s => s.running).length;
+            document.getElementById('active-bots').textContent = `${activeBots} / 10`;
+        }
+
+        // Show alert
+        function showAlert(message, type = 'info') {
+            const container = document.getElementById('alert-container');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            container.appendChild(alert);
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        // Load accounts
+        async function loadAccounts() {
+            try {
+                const response = await fetch('/api/accounts');
+                const result = await response.json();
+
+                if (!result.success) {
+                    showAlert('Ошибка загрузки аккаунтов', 'error');
+                    return;
+                }
+
+                const accounts = result.data;
+                const container = document.getElementById('account-list');
+
+                if (accounts.length === 0) {
+                    container.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 20px;">Нет аккаунтов. Создайте аккаунт через старый дашборд.</p>';
+                    return;
+                }
+
+                container.innerHTML = accounts.map(acc => `
+                    <div class="account-item ${acc.is_active ? 'active' : ''}" onclick="selectAccount('${acc.account_id}')">
+                        <div class="account-name">${acc.name} ${acc.is_active ? '✓' : ''}</div>
+                        <div class="account-details">
+                            ${acc.exchange.toUpperCase()} • ${acc.api_key_masked}
+                        </div>
+                    </div>
+                `).join('');
+
+                // Set active account
+                const active = accounts.find(a => a.is_active);
+                if (active) {
+                    activeAccount = active;
+                    document.getElementById('exchange-badge').textContent = active.exchange.toUpperCase();
+                }
+
+            } catch (error) {
+                showAlert('Ошибка соединения с сервером', 'error');
+            }
+        }
+
+        // Select account
+        async function selectAccount(accountId) {
+            try {
+                const response = await fetch(`/api/accounts/${accountId}/activate`, {method: 'POST'});
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('Аккаунт активирован', 'success');
+                    document.getElementById('accounts-modal').classList.remove('show');
+                    loadAccounts();
+                } else {
+                    showAlert(result.error || 'Ошибка активации', 'error');
+                }
+            } catch (error) {
+                showAlert('Ошибка соединения с сервером', 'error');
+            }
+        }
+
+        // Modal management
+        document.getElementById('accounts-btn').addEventListener('click', () => {
+            document.getElementById('accounts-modal').classList.add('show');
+            loadAccounts();
+        });
+
+        document.getElementById('close-modal').addEventListener('click', () => {
+            document.getElementById('accounts-modal').classList.remove('show');
+        });
+
+        // Update dashboard data
+        async function updateDashboard() {
+            try {
+                const response = await fetch('/api/all');
+                const result = await response.json();
+                if (!result.success) return;
+
+                const data = result.data;
+                document.getElementById('balance').textContent = `$${data.balance.toFixed(2)}`;
+                document.getElementById('equity').textContent = `$${data.equity.toFixed(2)}`;
+            } catch (error) {
+                console.error('Error updating dashboard:', error);
+            }
+        }
+
+        // Initialize
+        initializeBotSlots();
+        loadAccounts();
+        updateDashboard();
+        setInterval(updateDashboard, 3000);
+    </script>
+</body>
+</html>
