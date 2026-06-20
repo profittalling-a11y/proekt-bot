@@ -5,8 +5,7 @@ from pathlib import Path
 from threading import Thread
 
 from .config import load_config
-from .trader import TradingBot
-from .dashboard_api import run_dashboard, set_bot_instance, set_config_instance, set_account_manager, set_multibot_manager
+from .dashboard_api import run_dashboard, set_config_instance, set_account_manager, set_multibot_manager
 from .account_manager import AccountManager
 from .multibot_manager import MultiBotManager
 
@@ -49,43 +48,23 @@ def main():
         logger = logging.getLogger(__name__)
         logger.info("Starting Multi-Exchange Trading Bot")
 
-        # Initialize account manager
-        account_manager = AccountManager()
-
-        # Don't auto-connect to any exchange - wait for user to connect via dashboard
-
-        # Validate configuration
-        logger.info(f"Configuration loaded: {config.symbol} on {config.timeframe}m timeframe")
-        logger.info(f"Trading mode: {config.trading_mode.value}")
-        logger.info(f"Exchange: {config.exchange.value}")
-
-        if config.is_live:
-            logger.warning("=" * 60)
-            logger.warning("LIVE TRADING MODE ENABLED")
-            logger.warning("Real money will be used. Proceed with caution!")
-            logger.warning("=" * 60)
-
         # Start dashboard + webhook in background thread
         logger.info("Starting dashboard + webhook on http://0.0.0.0:80")
         dashboard_thread = Thread(target=run_dashboard, kwargs={'host': '0.0.0.0', 'port': 80}, daemon=True)
         dashboard_thread.start()
 
-        # Create bot instance (but don't start it)
-        bot = TradingBot(config)
-
-        # Initialize multi-bot manager
+        # Initialize account manager and multi-bot manager
+        account_manager = AccountManager()
         multibot_manager = MultiBotManager(account_manager, config)
 
-        # Set bot, config, account manager, and multibot manager instances for dashboard control
-        set_bot_instance(bot)
+        # Don't create bot instance yet - wait for user to connect exchange via dashboard
         set_config_instance(config)
         set_account_manager(account_manager)
         set_multibot_manager(multibot_manager)
 
         logger.info("=" * 60)
-        logger.info("Bot initialized. Use dashboard to start trading.")
+        logger.info("Bot initialized. Connect exchange via dashboard to start trading.")
         logger.info("Dashboard + Webhook: http://0.0.0.0:80")
-        logger.info("Multi-bot mode: You can run multiple bots simultaneously")
         logger.info("=" * 60)
 
         # Keep main thread alive
@@ -95,8 +74,6 @@ def main():
         except KeyboardInterrupt:
             logger.info("Shutdown requested")
             multibot_manager.stop_all_bots()
-            if bot.running:
-                bot.stop()
 
     except KeyboardInterrupt:
         logger.info("Shutdown requested by user")

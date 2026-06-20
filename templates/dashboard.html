@@ -5,72 +5,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trading Bot Dashboard</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
-        .container { max-width: 1800px; margin: 0 auto; padding: 20px; }
-        .header { background: #1e293b; padding: 16px 24px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155; }
-        .header h1 { font-size: 22px; color: #38bdf8; }
-        .header-right { display: flex; align-items: center; gap: 12px; }
-        .status-badge { padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; background: #065f46; color: #34d399; }
-        .section { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #334155; }
-        .section-title { font-size: 16px; font-weight: 700; color: #38bdf8; margin-bottom: 16px; }
-        .exchange-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
-        .exchange-card { background: #0f172a; border: 2px solid #334155; border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.2s; }
-        .exchange-card:hover { border-color: #38bdf8; }
-        .exchange-card.active { border-color: #22c55e; background: #052e16; }
-        .exchange-card.connected { border-color: #22c55e; }
-        .exchange-name { font-weight: 700; font-size: 13px; }
-        .exchange-status { font-size: 11px; color: #94a3b8; margin-top: 2px; }
-        .exchange-status.connected { color: #34d399; }
-        .exchange-balance { font-size: 11px; color: #fbbf24; margin-top: 2px; font-weight: 600; }
-        .conn-form { background: #0f172a; border-radius: 10px; padding: 16px; border: 1px solid #334155; margin-top: 12px; }
-        .form-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
-        .form-group { display: flex; flex-direction: column; gap: 4px; }
-        .form-group label { font-size: 11px; color: #94a3b8; text-transform: uppercase; }
-        .form-group input, .form-group select { background: #1e293b; border: 1px solid #475569; border-radius: 6px; padding: 8px 10px; color: #e2e8f0; font-size: 13px; }
-        .form-group input:focus { outline: none; border-color: #38bdf8; }
-        .btn { padding: 8px 16px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; transition: all 0.2s; }
-        .btn-primary { background: #2563eb; color: white; }
-        .btn-primary:hover { background: #1d4ed8; }
-        .btn-success { background: #16a34a; color: white; }
-        .btn-success:hover { background: #15803d; }
-        .btn-danger { background: #dc2626; color: white; }
-        .btn-danger:hover { background: #b91c1c; }
-        .btn-secondary { background: #475569; color: white; }
-        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .pairs-container { display: flex; gap: 16px; }
-        .pairs-list { flex: 1; max-height: 250px; overflow-y: auto; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 8px; }
-        .pair-item { display: flex; align-items: center; gap: 8px; padding: 5px 8px; cursor: pointer; border-radius: 4px; font-size: 12px; transition: background 0.15s; }
-        .pair-item:hover { background: #334155; }
-        .pair-item input { cursor: pointer; }
-        .pair-item.checked { background: #1e40af; }
-        .pairs-actions { display: flex; flex-direction: column; gap: 6px; min-width: 110px; padding-top: 4px; }
-        .pairs-selected { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; min-height: 32px; }
-        .pair-tag { padding: 4px 10px; background: #1e40af; border-radius: 4px; font-size: 11px; cursor: pointer; }
-        .pair-tag:hover { background: #dc2626; }
-        .bots-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-        .bot-slot { background: #0f172a; border: 2px solid #334155; border-radius: 10px; padding: 14px; }
-        .bot-slot.running { border-color: #22c55e; }
-        .bot-slot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .bot-slot-title { font-weight: 700; font-size: 13px; color: #38bdf8; }
-        .bot-dot { width: 10px; height: 10px; border-radius: 50%; background: #475569; }
-        .bot-dot.active { background: #22c55e; animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        .bot-pair { font-size: 12px; color: #e2e8f0; padding: 6px 8px; background: #1e293b; border-radius: 4px; margin-bottom: 8px; }
-        .bot-controls { display: flex; gap: 6px; }
-        .bot-controls button { flex: 1; padding: 6px; font-size: 11px; }
-        .bot-info { margin-top: 8px; padding: 6px; background: #1e293b; border-radius: 4px; font-size: 11px; color: #94a3b8; text-align: center; }
-        .bot-info.active { background: #052e16; color: #34d399; }
-        .positions-table { width: 100%; border-collapse: collapse; }
-        .positions-table th { background: #0f172a; padding: 10px; text-align: left; font-size: 12px; color: #94a3b8; border-bottom: 2px solid #334155; }
-        .positions-table td { padding: 10px; border-bottom: 1px solid #334155; font-size: 13px; }
-        .positive { color: #34d399; }
-        .negative { color: #f87171; }
-        .webhook-url { font-family: monospace; font-size: 12px; color: #38bdf8; background: #0f172a; padding: 10px; border-radius: 6px; margin-top: 8px; word-break: break-all; }
-        .alert { padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; }
-        .alert-success { background: #065f46; color: #34d399; }
-        .alert-error { background: #7f1d1d; color: #fca5a5; }
-        .alert-info { background: #1e3a5f; color: #93c5fd; }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
+        .container{max-width:1800px;margin:0 auto;padding:20px}
+        .header{background:#1e293b;padding:16px 24px;border-radius:12px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;border:1px solid #334155}
+        .header h1{font-size:22px;color:#38bdf8}
+        .status-badge{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;background:#065f46;color:#34d399}
+        .section{background:#1e293b;border-radius:12px;padding:20px;margin-bottom:20px;border:1px solid #334155}
+        .section-title{font-size:16px;font-weight:700;color:#38bdf8;margin-bottom:16px}
+        .exchange-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+        .exchange-card{background:#0f172a;border:2px solid #334155;border-radius:10px;padding:12px;cursor:pointer;transition:all .2s}
+        .exchange-card:hover{border-color:#38bdf8}
+        .exchange-card.active{border-color:#22c55e;background:#052e16}
+        .exchange-card.connected{border-color:#22c55e}
+        .exchange-name{font-weight:700;font-size:13px}
+        .exchange-status{font-size:11px;color:#94a3b8;margin-top:2px}
+        .exchange-status.connected{color:#34d399}
+        .exchange-balance{font-size:11px;color:#fbbf24;margin-top:2px;font-weight:600}
+        .conn-form{background:#0f172a;border-radius:10px;padding:16px;border:1px solid #334155;margin-top:12px}
+        .form-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
+        .form-group{display:flex;flex-direction:column;gap:4px}
+        .form-group label{font-size:11px;color:#94a3b8;text-transform:uppercase}
+        .form-group input,.form-group select{background:#1e293b;border:1px solid #475569;border-radius:6px;padding:8px 10px;color:#e2e8f0;font-size:13px}
+        .form-group input:focus{outline:none;border-color:#38bdf8}
+        .btn{padding:8px 16px;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:13px;transition:all .2s}
+        .btn-primary{background:#2563eb;color:white}
+        .btn-success{background:#16a34a;color:white}
+        .btn-danger{background:#dc2626;color:white}
+        .btn-secondary{background:#475569;color:white}
+        .btn:disabled{opacity:.4;cursor:not-allowed}
+        .bots-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+        .bot-slot{background:#0f172a;border:2px solid #334155;border-radius:10px;padding:14px}
+        .bot-slot.running{border-color:#22c55e}
+        .bot-slot-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+        .bot-slot-title{font-weight:700;font-size:13px;color:#38bdf8}
+        .bot-dot{width:10px;height:10px;border-radius:50%;background:#475569}
+        .bot-dot.active{background:#22c55e;animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+        .bot-controls{display:flex;gap:6px;margin-top:8px}
+        .bot-controls button{flex:1;padding:6px;font-size:11px}
+        .bot-info{margin-top:8px;padding:6px;background:#1e293b;border-radius:4px;font-size:11px;color:#94a3b8;text-align:center}
+        .bot-info.active{background:#052e16;color:#34d399}
+        .positions-table{width:100%;border-collapse:collapse}
+        .positions-table th{background:#0f172a;padding:10px;text-align:left;font-size:12px;color:#94a3b8;border-bottom:2px solid #334155}
+        .positions-table td{padding:10px;border-bottom:1px solid #334155;font-size:13px}
+        .positive{color:#34d399}
+        .negative{color:#f87171}
+        .webhook-url{font-family:monospace;font-size:12px;color:#38bdf8;background:#0f172a;padding:10px;border-radius:6px;margin-top:8px;word-break:break-all}
+        .alert{padding:12px;border-radius:8px;margin-bottom:12px;font-size:13px}
+        .alert-success{background:#065f46;color:#34d399}
+        .alert-error{background:#7f1d1d;color:#fca5a5}
+        .alert-info{background:#1e3a5f;color:#93c5fd}
+        .slot-select{width:100%;background:#1e293b;border:1px solid #475569;border-radius:6px;padding:6px;color:#e2e8f0;font-size:11px;margin-bottom:8px}
     </style>
 </head>
 <body>
@@ -102,24 +88,10 @@
             </div>
         </div>
 
-        <!-- Trading Pairs -->
-        <div class="section">
-            <div class="section-title">Trading Pairs</div>
-            <div class="pairs-container">
-                <div class="pairs-list" id="pairs-list"></div>
-                <div class="pairs-actions">
-                    <button class="btn btn-primary" onclick="selectAllPairs()">Select All</button>
-                    <button class="btn btn-secondary" onclick="deselectAllPairs()">Deselect All</button>
-                    <div style="font-size: 11px; color: #94a3b8; text-align: center; margin-top: 4px;" id="pair-count">0 / 0</div>
-                </div>
-            </div>
-            <div class="pairs-selected" id="pairs-selected"></div>
-        </div>
-
         <!-- Webhook -->
         <div class="section">
             <div class="section-title">TradingView Webhook</div>
-            <div style="font-size: 12px; color: #94a3b8;">Set this URL in TradingView alert:</div>
+            <div style="font-size:12px;color:#94a3b8;">Set this URL in TradingView alert:</div>
             <div class="webhook-url" id="webhook-url">Loading...</div>
         </div>
 
@@ -134,7 +106,7 @@
             <div class="section-title">Open Positions</div>
             <table class="positions-table">
                 <thead><tr><th>Exchange</th><th>Symbol</th><th>Side</th><th>Size</th><th>Entry</th><th>PnL</th></tr></thead>
-                <tbody id="positions-body"><tr><td colspan="6" style="text-align:center; color:#64748b;">No open positions</td></tr></tbody>
+                <tbody id="positions-body"><tr><td colspan="6" style="text-align:center;color:#64748b;">No open positions</td></tr></tbody>
             </table>
         </div>
     </div>
@@ -151,10 +123,13 @@
         let selectedExchange = null;
         let connectedExchanges = {};
         let availablePairs = [...DEFAULT_PAIRS];
-        let selectedPairs = new Set();
         let botSlots = Array.from({length:10},(_,i)=>({id:i+1,symbol:null,exchange:null,running:false,botId:null}));
 
-        // Load connections from server on page load
+        function getConnectedExchangeId() {
+            const keys = Object.keys(connectedExchanges);
+            return keys.length > 0 ? keys[0] : null;
+        }
+
         async function loadConnectionsFromServer() {
             try {
                 const r = await fetch('/api/exchange/connections');
@@ -162,11 +137,12 @@
                 if (res.success && res.data) {
                     connectedExchanges = {};
                     for (const [ex, info] of Object.entries(res.data)) {
-                        connectedExchanges[ex] = { apiKey: '***', mode: info.testnet ? 'testnet' : 'live' };
+                        connectedExchanges[ex] = { mode: info.testnet ? 'testnet' : 'live' };
                     }
                 }
             } catch(e) {}
             initExchangeGrid();
+            renderBotSlots();
         }
 
         function initExchangeGrid() {
@@ -177,7 +153,6 @@
                     <div class="exchange-balance" id="ex-balance-${ex.id}"></div>
                 </div>`
             ).join('');
-
             EXCHANGES.forEach(ex => {
                 document.getElementById(`ex-${ex.id}`).onclick = () => selectExchange(ex.id);
                 if (connectedExchanges[ex.id]) loadBalance(ex.id);
@@ -214,8 +189,8 @@
                     document.getElementById(`ex-status-${selectedExchange.id}`).textContent=`Connected (${mode})`;
                     document.getElementById(`ex-status-${selectedExchange.id}`).classList.add('connected');
                     showAlert(`${selectedExchange.name} connected`,'success');
-                    loadPairs(selectedExchange.id);
                     loadBalance(selectedExchange.id);
+                    renderBotSlots();
                 } else showAlert(res.error||'Failed','error');
             }catch(e){showAlert('Connection error','error');}
         }
@@ -231,17 +206,8 @@
                 document.getElementById(`ex-status-${id}`).classList.remove('connected');
                 document.getElementById(`ex-balance-${id}`).textContent='';
                 showAlert(`${selectedExchange.name} disconnected`,'info');
+                renderBotSlots();
             }catch(e){showAlert('Disconnect error','error');}
-        }
-
-        async function loadPairs(exchangeId) {
-            try{
-                const r=await fetch(`/api/exchange/pairs?exchange=${exchangeId}`);
-                const res=await r.json();
-                if(res.success&&res.data&&res.data.length>0) availablePairs=res.data;
-                else availablePairs=[...DEFAULT_PAIRS];
-            }catch(e){availablePairs=[...DEFAULT_PAIRS];}
-            renderPairsList();
         }
 
         async function loadBalance(exchangeId) {
@@ -252,73 +218,49 @@
             }catch(e){}
         }
 
-        function renderPairsList() {
-            const list=document.getElementById('pairs-list');
-            list.innerHTML=availablePairs.map(p=>`<div class="pair-item${selectedPairs.has(p)?' checked':''}" data-pair="${p}"><input type="checkbox"${selectedPairs.has(p)?' checked':''}><span>${p}</span></div>`).join('');
-            renderSelectedTags();
-        }
-
-        function renderSelectedTags() {
-            const tags=document.getElementById('pairs-selected');
-            tags.innerHTML=[...selectedPairs].map(p=>`<div class="pair-tag" data-pair="${p}">${p} x</div>`).join('');
-            document.getElementById('pair-count').textContent=`${selectedPairs.size} / ${availablePairs.length}`;
-        }
-
-        function togglePair(pair) {
-            if(selectedPairs.has(pair)) selectedPairs.delete(pair);
-            else selectedPairs.add(pair);
-            renderPairsList();
-            updateBotSlots();
-        }
-
-        function selectAllPairs() { availablePairs.forEach(p=>selectedPairs.add(p)); renderPairsList(); updateBotSlots(); }
-        function deselectAllPairs() { selectedPairs.clear(); renderPairsList(); updateBotSlots(); }
-
-        function updateBotSlots() {
-            const pairs=[...selectedPairs];
-            botSlots.forEach((s,i)=>{s.symbol=pairs[i]||null;s.exchange=s.symbol?(connectedExchanges[selectedExchange?.id]?selectedExchange.id:null):null;});
-            renderBotSlots();
-        }
-
         function renderBotSlots() {
-            if(!availablePairs.length) return; // Don't render if no pairs loaded
+            const connId = getConnectedExchangeId();
             const pairOptions = availablePairs.map(p => `<option value="${p}">${p}</option>`).join('');
             const grid = document.getElementById('bots-grid');
             if(!grid) return;
-            grid.innerHTML = botSlots.map(s => {
-                const selected = s.symbol ? `value="${s.symbol}" selected` : 'value=""';
-                return `
+            grid.innerHTML = botSlots.map(s => `
                 <div class="bot-slot${s.running?' running':''}">
-                    <div class="bot-slot-header"><div class="bot-slot-title">#${s.id}</div><div class="bot-dot${s.running?' active':''}"></div></div>
-                    <select onchange="setBotPair(${s.id},this.value)" style="width:100%;background:#1e293b;border:1px solid #475569;border-radius:6px;padding:6px;color:#e2e8f0;font-size:11px;margin-bottom:8px;">
+                    <div class="bot-slot-header">
+                        <div class="bot-slot-title">#${s.id}</div>
+                        <div class="bot-dot${s.running?' active':''}"></div>
+                    </div>
+                    <select class="slot-select" onchange="setBotPair(${s.id},this.value)">
                         <option value="">Select pair...</option>
-                        ${pairOptions}
+                        ${availablePairs.map(p => `<option value="${p}"${s.symbol===p?' selected':''}>${p}</option>`).join('')}
                     </select>
                     <div class="bot-controls">
-                        <button class="btn btn-success" onclick="startBot(${s.id})"${!s.symbol||s.running?' disabled':''}>Start</button>
+                        <button class="btn btn-success" onclick="startBot(${s.id})"${!s.symbol||s.running||!connId?' disabled':''}>Start</button>
                         <button class="btn btn-danger" onclick="stopBot(${s.id})"${!s.running?' disabled':''}>Stop</button>
                     </div>
-                    <div class="bot-info${s.running?' active':''}">${s.running?`Running: ${s.symbol}`:'Idle'}</div>
-                </div>`;
-            }).join('');
+                    <div class="bot-info${s.running?' active':''}">${s.running?`Running: ${s.symbol}`:(s.symbol?s.symbol:'Idle')}</div>
+                </div>
+            `).join('');
         }
 
         function setBotPair(slotId, pair) {
             const slot = botSlots[slotId - 1];
             slot.symbol = pair || null;
-            slot.exchange = pair && selectedExchange ? selectedExchange.id : null;
+            slot.exchange = pair ? getConnectedExchangeId() : null;
             renderBotSlots();
         }
 
         async function startBot(slotId) {
             const s=botSlots[slotId-1];
-            if(!s.symbol||!s.exchange){showAlert('Select a pair first','error');return;}
+            if(!s.symbol){showAlert('Select a pair first','error');return;}
+            const connId = getConnectedExchangeId();
+            if(!connId){showAlert('Connect to an exchange first','error');return;}
+            s.exchange = connId;
             try{
                 const r=await fetch('/api/multibot/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({exchange:s.exchange,symbol:s.symbol,timeframe:15,supertrend_multiplier:3.0})});
                 const res=await r.json();
-                if(res.success){s.running=true;s.botId=res.bot_id;renderBotSlots();showAlert(`Bot #${slotId} started`,'success');}
+                if(res.success){s.running=true;s.botId=res.bot_id;renderBotSlots();showAlert(`Bot #${slotId} started: ${s.symbol}`,'success');}
                 else showAlert(res.error||'Failed','error');
-            }catch(e){showAlert('Error','error');}
+            }catch(e){showAlert('Error starting bot','error');}
         }
 
         async function stopBot(slotId) {
@@ -347,27 +289,8 @@
 
         function showAlert(msg,type='info'){const c=document.getElementById('alert-container');const a=document.createElement('div');a.className=`alert alert-${type}`;a.textContent=msg;c.appendChild(a);setTimeout(()=>a.remove(),4000);}
 
-        // Event delegation for pairs list
-        document.getElementById('pairs-list').addEventListener('click',function(e){
-            const item=e.target.closest('.pair-item');
-            if(!item)return;
-            togglePair(item.dataset.pair);
-        });
-
-        // Event delegation for selected tags (click to remove)
-        document.getElementById('pairs-selected').addEventListener('click',function(e){
-            const tag=e.target.closest('.pair-tag');
-            if(!tag)return;
-            togglePair(tag.dataset.pair);
-        });
-
-        // Init - load connections from server first
         loadConnectionsFromServer();
-        renderPairsList();
-        // Delay bot slots render to ensure DOM is ready
-        setTimeout(() => { renderBotSlots(); }, 100);
         setInterval(loadPositions,5000);
-        // Webhook URL - same host, no separate port needed
         document.getElementById('webhook-url').textContent=`http://${window.location.host}/tradingview/webhook`;
     </script>
 </body>
