@@ -1,7 +1,9 @@
 """Web API for dashboard."""
 from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
+import json
 import logging
+from pathlib import Path
 from typing import Optional
 from threading import Lock
 
@@ -9,6 +11,28 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder='../templates', static_folder='../static')
 CORS(app)
+
+# Connection persistence
+_CONNECTIONS_FILE = Path("data/exchange_connections.json")
+
+def _load_connections():
+    """Load saved connections from file."""
+    if _CONNECTIONS_FILE.exists():
+        try:
+            with open(_CONNECTIONS_FILE, 'r') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+def _save_connections(connections):
+    """Save connections to file."""
+    _CONNECTIONS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(_CONNECTIONS_FILE, 'w') as f:
+        json.dump(connections, f, indent=2)
+
+# Initialize connections from file
+app._exchange_connections = _load_connections()
 
 # Global state (thread-safe)
 _state_lock = Lock()
@@ -590,6 +614,9 @@ def api_connect_exchange():
             'testnet': testnet
         }
 
+        # Persist to file
+        _save_connections(app._exchange_connections)
+
         logger.info(f"Exchange connected: {exchange} (testnet={testnet})")
         return jsonify({'success': True, 'message': f'{exchange} connected'})
 
@@ -607,9 +634,26 @@ def api_disconnect_exchange():
 
         if hasattr(app, '_exchange_connections') and exchange in app._exchange_connections:
             del app._exchange_connections[exchange]
+            _save_connections(app._exchange_connections)
 
         logger.info(f"Exchange disconnected: {exchange}")
         return jsonify({'success': True, 'message': f'{exchange} disconnected'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/exchange/connections', methods=['GET'])
+def api_get_connections():
+    """Get all saved exchange connections (without secrets)."""
+    try:
+        connections = {}
+        for ex, conn in app._exchange_connections.items():
+            connections[ex] = {
+                'exchange': ex,
+                'testnet': conn.get('testnet', True),
+                'has_key': bool(conn.get('api_key')),
+            }
+        return jsonify({'success': True, 'data': connections})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -1736,15 +1780,23 @@ def api_hermes_status():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-def run_dashboard(host: str = '127.0.0.1', port: int = 5000, debug: bool = False):
-    """Run dashboard server.
+def run_dashboard(host: str = '0.0.0.0', port: int = 80, debug: bool = False):
+    """Run dashboard server with webhook on same port.
 
     Args:
         host: Host to bind to
         port: Port to bind to
         debug: Debug mode
     """
-    logger.info(f"Starting dashboard server on http://{host}:{port}")
+    # Register webhook blueprint on same app
+    try:
+        from .tradingview_webhook import webhook_bp
+        app.register_blueprint(webhook_bp)
+        logger.info("Webhook blueprint registered on same port")
+    except Exception as e:
+        logger.warning(f"Could not register webhook blueprint: {e}")
+
+    logger.info(f"Starting dashboard + webhook on http://{host}:{port}")
     app.run(host=host, port=port, debug=debug, use_reloader=False)
 
 

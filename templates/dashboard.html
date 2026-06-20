@@ -149,14 +149,24 @@
         const DEFAULT_PAIRS = ['BTC-USDT-SWAP','ETH-USDT-SWAP','SOL-USDT-SWAP','BNB-USDT-SWAP','XRP-USDT-SWAP','ADA-USDT-SWAP','DOGE-USDT-SWAP','AVAX-USDT-SWAP','LINK-USDT-SWAP','DOT-USDT-SWAP','MATIC-USDT-SWAP','UNI-USDT-SWAP','ATOM-USDT-SWAP','LTC-USDT-SWAP','NEAR-USDT-SWAP','FIL-USDT-SWAP'];
 
         let selectedExchange = null;
-        let connectedExchanges = JSON.parse(localStorage.getItem('connectedExchanges') || '{}');
+        let connectedExchanges = {};
         let availablePairs = [...DEFAULT_PAIRS];
-        let selectedPairs = new Set(JSON.parse(localStorage.getItem('selectedPairs') || '[]'));
+        let selectedPairs = new Set();
         let botSlots = Array.from({length:10},(_,i)=>({id:i+1,symbol:null,exchange:null,running:false,botId:null}));
 
-        function saveState() {
-            localStorage.setItem('connectedExchanges', JSON.stringify(connectedExchanges));
-            localStorage.setItem('selectedPairs', JSON.stringify([...selectedPairs]));
+        // Load connections from server on page load
+        async function loadConnectionsFromServer() {
+            try {
+                const r = await fetch('/api/exchange/connections');
+                const res = await r.json();
+                if (res.success && res.data) {
+                    connectedExchanges = {};
+                    for (const [ex, info] of Object.entries(res.data)) {
+                        connectedExchanges[ex] = { apiKey: '***', mode: info.testnet ? 'testnet' : 'live' };
+                    }
+                }
+            } catch(e) {}
+            initExchangeGrid();
         }
 
         function initExchangeGrid() {
@@ -200,7 +210,6 @@
                 const res=await r.json();
                 if(res.success){
                     connectedExchanges[selectedExchange.id]={apiKey,mode};
-                    saveState();
                     document.getElementById(`ex-${selectedExchange.id}`).classList.add('connected');
                     document.getElementById(`ex-status-${selectedExchange.id}`).textContent=`Connected (${mode})`;
                     document.getElementById(`ex-status-${selectedExchange.id}`).classList.add('connected');
@@ -217,7 +226,6 @@
             try{
                 await fetch('/api/exchange/disconnect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({exchange:id})});
                 delete connectedExchanges[id];
-                saveState();
                 document.getElementById(`ex-${id}`).classList.remove('connected');
                 document.getElementById(`ex-status-${id}`).textContent='Not connected';
                 document.getElementById(`ex-status-${id}`).classList.remove('connected');
@@ -259,13 +267,12 @@
         function togglePair(pair) {
             if(selectedPairs.has(pair)) selectedPairs.delete(pair);
             else selectedPairs.add(pair);
-            saveState();
             renderPairsList();
             updateBotSlots();
         }
 
-        function selectAllPairs() { availablePairs.forEach(p=>selectedPairs.add(p)); saveState(); renderPairsList(); updateBotSlots(); }
-        function deselectAllPairs() { selectedPairs.clear(); saveState(); renderPairsList(); updateBotSlots(); }
+        function selectAllPairs() { availablePairs.forEach(p=>selectedPairs.add(p)); renderPairsList(); updateBotSlots(); }
+        function deselectAllPairs() { selectedPairs.clear(); renderPairsList(); updateBotSlots(); }
 
         function updateBotSlots() {
             const pairs=[...selectedPairs];
@@ -337,12 +344,13 @@
             togglePair(tag.dataset.pair);
         });
 
-        // Init
-        initExchangeGrid();
+        // Init - load connections from server first
+        loadConnectionsFromServer();
         renderPairsList();
         renderBotSlots();
         setInterval(loadPositions,5000);
-        document.getElementById('webhook-url').textContent=`http://${window.location.hostname}:5001/tradingview/webhook`;
+        // Webhook URL - same host, no separate port needed
+        document.getElementById('webhook-url').textContent=`http://${window.location.host}/tradingview/webhook`;
     </script>
 </body>
 </html>

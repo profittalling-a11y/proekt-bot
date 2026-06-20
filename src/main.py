@@ -80,9 +80,9 @@ def main():
             logger.warning("Real money will be used. Proceed with caution!")
             logger.warning("=" * 60)
 
-        # Start dashboard in background thread
-        logger.info("Starting dashboard on http://127.0.0.1:5000")
-        dashboard_thread = Thread(target=run_dashboard, kwargs={'host': '127.0.0.1', 'port': 5000}, daemon=True)
+        # Start dashboard + webhook in background thread
+        logger.info("Starting dashboard + webhook on http://0.0.0.0:80")
+        dashboard_thread = Thread(target=run_dashboard, kwargs={'host': '0.0.0.0', 'port': 80}, daemon=True)
         dashboard_thread.start()
 
         # Create bot instance (but don't start it)
@@ -99,7 +99,7 @@ def main():
 
         logger.info("=" * 60)
         logger.info("Bot initialized. Use dashboard to start trading.")
-        logger.info("Dashboard: http://127.0.0.1:5000")
+        logger.info("Dashboard + Webhook: http://0.0.0.0:80")
         logger.info("Multi-bot mode: You can run multiple bots simultaneously")
         logger.info("=" * 60)
 
