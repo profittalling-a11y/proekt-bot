@@ -1636,6 +1636,74 @@ def api_get_trade_history():
         }), 500
 
 
+@app.route('/api/hermes/signal', methods=['POST'])
+def api_hermes_signal():
+    """Receive signal from Hermes Agent.
+
+    Request JSON:
+        {
+            "symbol": "BTCUSDT",
+            "action": "buy" | "sell" | "close",
+            "price": 50000.0,
+            "confidence": 0.85,
+            "source": "cumulative_delta"
+        }
+    """
+    try:
+        from .hermes_bridge import get_bridge, HermesSignal
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data'}), 400
+
+        signal = HermesSignal(
+            symbol=data.get('symbol', ''),
+            action=data.get('action', ''),
+            price=float(data.get('price', 0)),
+            confidence=float(data.get('confidence', 0)),
+            source=data.get('source', 'unknown')
+        )
+
+        bridge = get_bridge()
+        result = bridge.receive_signal(signal)
+
+        if result['accepted']:
+            # Execute trade
+            from .tradingview_webhook import _open_long, _open_short, _close_position
+            if signal.action == 'buy':
+                trade_result = _open_long(signal.symbol, signal.price)
+            elif signal.action == 'sell':
+                trade_result = _open_short(signal.symbol, signal.price)
+            elif signal.action == 'close':
+                trade_result = _close_position(signal.symbol)
+            else:
+                return jsonify({'success': False, 'error': f'Unknown action: {signal.action}'}), 400
+
+            return jsonify({'success': True, 'signal': result, 'trade': trade_result}), 200
+        else:
+            return jsonify({'success': True, 'signal': result, 'trade': None}), 200
+
+    except Exception as e:
+        logger.error(f"Error processing Hermes signal: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/hermes/status', methods=['GET'])
+def api_hermes_status():
+    """Get Hermes bridge status and statistics."""
+    try:
+        from .hermes_bridge import get_bridge
+        bridge = get_bridge()
+        return jsonify({
+            'success': True,
+            'data': {
+                'stats': bridge.get_stats(),
+                'recent_signals': bridge.get_recent_signals(10),
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 def run_dashboard(host: str = '127.0.0.1', port: int = 5000, debug: bool = False):
     """Run dashboard server.
 
