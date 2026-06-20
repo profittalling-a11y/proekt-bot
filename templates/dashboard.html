@@ -397,6 +397,7 @@
             slot.symbol = canonicalPair || null;
             slot.exchange = canonicalPair ? getConnectedExchangeId() : null;
             renderBotSlots();
+            saveBotSlotsToServer();
         }
 
         async function startBot(slotId) {
@@ -459,11 +460,36 @@
                     }
                 }
             } catch(e) {}
+            // Load saved bot slots
+            await loadBotSlotsFromServer();
             renderTabs();
             renderBotSlots();
             document.getElementById('tab-stats').style.display = 'block';
             document.getElementById('tab-exchange').style.display = 'none';
             document.getElementById('webhook-url').textContent = `http://${window.location.host}/tradingview/webhook`;
+        }
+
+        async function loadBotSlotsFromServer() {
+            try {
+                const r = await fetch('/api/bot-slots');
+                const res = await r.json();
+                if(res.success && res.data && res.data.length) {
+                    res.data.forEach(saved => {
+                        const slot = botSlots.find(s => s.id === saved.id);
+                        if(slot) {
+                            slot.symbol = saved.symbol;
+                            slot.exchange = saved.exchange;
+                        }
+                    });
+                }
+            } catch(e) {}
+        }
+
+        async function saveBotSlotsToServer() {
+            try {
+                await fetch('/api/bot-slots', {method:'POST', headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({slots: botSlots.map(s => ({id:s.id, symbol:s.symbol, exchange:s.exchange}))})});
+            } catch(e) {}
         }
 
         function showAlert(msg, type='info') {

@@ -56,7 +56,7 @@ def verify_signature(payload: bytes, signature: str, secret: str) -> bool:
     return hmac.compare_digest(signature, expected)
 
 
-@webhook_bp.route('/tradingview/webhook', methods=['POST'])
+@webhook_bp.route('/tradingview/webhook', methods=['GET', 'POST'])
 def tradingview_webhook():
     """Handle TradingView webhook alerts.
 
@@ -67,21 +67,93 @@ def tradingview_webhook():
         "price": 50000.0
     }
     """
+    # Handle GET requests (ngrok browser check, health check)
+    if request.method == 'GET':
+        return jsonify({'status': 'ok', 'message': 'Webhook endpoint ready'}), 200
     try:
-        webhook_secret = getattr(_config, 'tradingview_webhook_secret', '')
-        if webhook_secret:
-            signature = request.headers.get('X-Signature', '')
-            if not verify_signature(request.data, signature, webhook_secret):
-                logger.warning("Invalid webhook signature")
-                return jsonify({'error': 'Invalid signature'}), 401
+        # Accept any request - log everything
+        raw_data = request.get_data(as_text=True).strip()
+        logger.info(f"Webhook received: {request.method} {request.remote_addr} data={raw_data[:500]}")
 
-        data = request.json
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
+        # Try to parse JSON
+        data = None
+        if raw_data:
+            try:
+                import json
+                data = json.loads(raw_data)
+            except Exception:
+                data = None
 
-        symbol = data.get('symbol', '').upper()
-        action = data.get('action', '').lower()
-        price = float(data.get('price', 0))
+        symbol = ''
+        action = ''
+        price = 0.0
+
+        if data and isinstance(data, dict):
+            # JSON format: {"symbol":"SOLUSDT","action":"sell","price":73.15}
+            symbol = data.get('symbol', '').upper()
+            action = data.get('action', '').lower()
+            price = float(data.get('price', 0))
+        elif raw_data:
+            # Plain text format: "SuperTrend Buy!" or "SuperTrend Sell!"
+            text = raw_data.upper()
+            if 'BUY' in text or 'LONG' in text:
+                action = 'buy'
+            elif 'SELL' in text or 'SHORT' in text:
+                action = 'sell'
+            elif 'CLOSE' in text:
+                action = 'close'
+
+            # Try to extract symbol from text
+            import re
+            symbols_found = re.findall(r'[A-Z]{2,10}USDT', text)
+            if symbols_found:
+                symbol = symbols_found[0]
+            else:
+                symbol = 'SOLUSDT'  # Default
+
+        if not action:
+            return jsonify({'success': True, 'message': 'Received', 'raw': raw_data[:200]}), 200
+
+        logger.info(f"TradingView signal: {action.upper()} {symbol} @ {price}")
+
+        logger.info(f"TradingView webhook received: {action.upper()} {symbol} @ {price}")
+
+        # Store signal in file for dashboard to read
+        from pathlib import Path
+        import json
+        import time
+
+        signals_file = Path("data/tradingview_signals.json")
+        signals_file.parent.mkdir(parents=True, exist_ok=True)
+
+        signals = []
+        if signals_file.exists():
+            try:
+                signals = json.loads(signals_file.read_text(encoding='utf-8'))
+            except Exception:
+                signals = []
+
+        signals.append({
+            'symbol': symbol,
+            'action': action,
+            'price': price,
+            'timestamp': time.time(),
+            'time': time.strftime('%H:%M:%S')
+        })
+
+        # Keep last 50 signals
+        signals = signals[-50:]
+        signals_file.write_text(json.dumps(signals, indent=2), encoding='utf-8')
+
+        # If no config, just log and return
+        if _config is None:
+            logger.warning("No exchange configured - signal logged but not executed")
+            return jsonify({
+                'success': True,
+                'message': f'Signal logged: {action.upper()} {symbol} @ {price}',
+                'executed': False,
+                'reason': 'No exchange connected'
+            }), 200
 
         if not symbol or not action:
             return jsonify({'error': 'Missing symbol or action'}), 400

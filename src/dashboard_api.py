@@ -15,6 +15,7 @@ CORS(app)
 
 # Connection persistence
 _CONNECTIONS_FILE = Path("data/exchange_connections.json")
+_BOT_SLOTS_FILE = Path("data/bot_slots.json")
 
 def _load_connections():
     """Load saved connections from file."""
@@ -31,6 +32,22 @@ def _save_connections(connections):
     _CONNECTIONS_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(_CONNECTIONS_FILE, 'w') as f:
         json.dump(connections, f, indent=2)
+
+def _load_bot_slots():
+    """Load saved bot slot state from file."""
+    if _BOT_SLOTS_FILE.exists():
+        try:
+            with open(_BOT_SLOTS_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return []
+
+def _save_bot_slots(slots):
+    """Save bot slot state to file."""
+    _BOT_SLOTS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(_BOT_SLOTS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(slots, f, indent=2)
 
 def _save_to_env(exchange, api_key, api_secret, passphrase, testnet):
     """Save API credentials to .env file."""
@@ -1895,6 +1912,43 @@ def api_stats():
                 'per_exchange': per_exchange,
             }
         })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/signals', methods=['GET'])
+def api_get_signals():
+    """Get recent TradingView signals for dashboard display."""
+    try:
+        from pathlib import Path
+        import json
+        signals_file = Path("data/tradingview_signals.json")
+        if signals_file.exists():
+            signals = json.loads(signals_file.read_text(encoding='utf-8'))
+            return jsonify({'success': True, 'data': signals[-20:]})
+        return jsonify({'success': True, 'data': []})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/bot-slots', methods=['GET'])
+def api_get_bot_slots():
+    """Get saved bot slot state."""
+    try:
+        slots = _load_bot_slots()
+        return jsonify({'success': True, 'data': slots})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/bot-slots', methods=['POST'])
+def api_save_bot_slots():
+    """Save bot slot state."""
+    try:
+        data = request.get_json()
+        if data and 'slots' in data:
+            _save_bot_slots(data['slots'])
+        return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
