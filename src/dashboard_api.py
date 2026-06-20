@@ -1824,6 +1824,43 @@ def api_hermes_status():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/agent/log', methods=['POST'])
+def api_agent_log():
+    """Log agent activity for dashboard display.
+
+    Request JSON:
+        {
+            "agent": "signal" | "trade" | "system",
+            "message": "BTC BUY @ 50000"
+        }
+    """
+    try:
+        data = request.get_json()
+        agent = data.get('agent', 'system')
+        message = data.get('message', '')
+        logger.info(f"Agent [{agent}]: {message}")
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/agent/signals', methods=['GET'])
+def api_agent_signals():
+    """Get recent agent signals for dashboard display."""
+    try:
+        limit = int(request.args.get('limit', 50))
+        signals = []
+        if _multibot_manager:
+            for bot_instance in _multibot_manager.bots.values():
+                if bot_instance.bot and hasattr(bot_instance.bot, 'recent_signals'):
+                    for sig in bot_instance.bot.recent_signals[-limit:]:
+                        signals.append(sig)
+        signals.sort(key=lambda x: x.get('time', ''), reverse=True)
+        return jsonify({'success': True, 'data': signals[:limit]})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 def run_dashboard(host: str = '0.0.0.0', port: int = 80, debug: bool = False):
     """Run dashboard server with webhook on same port.
 
