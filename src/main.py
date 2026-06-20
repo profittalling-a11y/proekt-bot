@@ -52,22 +52,7 @@ def main():
         # Initialize account manager
         account_manager = AccountManager()
 
-        # Check if there's an active account
-        active_account = account_manager.get_active_account()
-        if active_account:
-            logger.info(f"Loading active account: {active_account.name} ({active_account.exchange})")
-
-            # Update config from active account
-            from .config import Exchange as ExchangeEnum, TradingMode
-            config.exchange = ExchangeEnum(active_account.exchange)
-            config.set_api_credentials(
-                active_account.api_key,
-                active_account.api_secret,
-                active_account.passphrase
-            )
-            config.timeframe = active_account.timeframe
-            config.supertrend_multiplier = active_account.supertrend_multiplier
-            config.trading_mode = TradingMode(active_account.trading_mode)
+        # Don't auto-connect to any exchange - wait for user to connect via dashboard
 
         # Validate configuration
         logger.info(f"Configuration loaded: {config.symbol} on {config.timeframe}m timeframe")

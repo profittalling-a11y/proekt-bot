@@ -281,20 +281,26 @@
         }
 
         function renderBotSlots() {
+            if(!availablePairs.length) return; // Don't render if no pairs loaded
             const pairOptions = availablePairs.map(p => `<option value="${p}">${p}</option>`).join('');
-            document.getElementById('bots-grid').innerHTML=botSlots.map(s=>`
+            const grid = document.getElementById('bots-grid');
+            if(!grid) return;
+            grid.innerHTML = botSlots.map(s => {
+                const selected = s.symbol ? `value="${s.symbol}" selected` : 'value=""';
+                return `
                 <div class="bot-slot${s.running?' running':''}">
                     <div class="bot-slot-header"><div class="bot-slot-title">#${s.id}</div><div class="bot-dot${s.running?' active':''}"></div></div>
                     <select onchange="setBotPair(${s.id},this.value)" style="width:100%;background:#1e293b;border:1px solid #475569;border-radius:6px;padding:6px;color:#e2e8f0;font-size:11px;margin-bottom:8px;">
                         <option value="">Select pair...</option>
-                        ${pairOptions.replace(`value="${s.symbol}"`,`value="${s.symbol}" selected`)}
+                        ${pairOptions}
                     </select>
                     <div class="bot-controls">
                         <button class="btn btn-success" onclick="startBot(${s.id})"${!s.symbol||s.running?' disabled':''}>Start</button>
                         <button class="btn btn-danger" onclick="stopBot(${s.id})"${!s.running?' disabled':''}>Stop</button>
                     </div>
                     <div class="bot-info${s.running?' active':''}">${s.running?`Running: ${s.symbol}`:'Idle'}</div>
-                </div>`).join('');
+                </div>`;
+            }).join('');
         }
 
         function setBotPair(slotId, pair) {
@@ -358,7 +364,8 @@
         // Init - load connections from server first
         loadConnectionsFromServer();
         renderPairsList();
-        renderBotSlots();
+        // Delay bot slots render to ensure DOM is ready
+        setTimeout(() => { renderBotSlots(); }, 100);
         setInterval(loadPositions,5000);
         // Webhook URL - same host, no separate port needed
         document.getElementById('webhook-url').textContent=`http://${window.location.host}/tradingview/webhook`;

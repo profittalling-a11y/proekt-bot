@@ -32,6 +32,42 @@ def _save_connections(connections):
     with open(_CONNECTIONS_FILE, 'w') as f:
         json.dump(connections, f, indent=2)
 
+def _save_to_env(exchange, api_key, api_secret, passphrase, testnet):
+    """Save API credentials to .env file."""
+    env_file = Path(".env")
+    lines = []
+    if env_file.exists():
+        lines = env_file.read_text().splitlines()
+
+    # Keys to update
+    prefix = exchange.upper()
+    new_keys = {
+        f"{prefix}_API_KEY": api_key,
+        f"{prefix}_API_SECRET": api_secret,
+    }
+    if passphrase:
+        new_keys[f"{prefix}_PASSPHRASE"] = passphrase
+    new_keys["EXCHANGE"] = exchange
+    new_keys["TRADING_MODE"] = "testnet" if testnet else "live"
+
+    # Update existing keys or append
+    updated_keys = set()
+    new_lines = []
+    for line in lines:
+        key = line.split("=")[0].strip() if "=" in line else ""
+        if key in new_keys:
+            new_lines.append(f"{key}={new_keys[key]}")
+            updated_keys.add(key)
+        else:
+            new_lines.append(line)
+
+    # Append new keys
+    for key, val in new_keys.items():
+        if key not in updated_keys:
+            new_lines.append(f"{key}={val}")
+
+    env_file.write_text("\n".join(new_lines) + "\n")
+
 # Initialize connections from file
 app._exchange_connections = _load_connections()
 
@@ -617,6 +653,9 @@ def api_connect_exchange():
 
         # Persist to file
         _save_connections(app._exchange_connections)
+
+        # Save to .env file
+        _save_to_env(exchange, api_key, api_secret, passphrase, testnet)
 
         logger.info(f"Exchange connected: {exchange} (testnet={testnet})")
         return jsonify({'success': True, 'message': f'{exchange} connected'})
