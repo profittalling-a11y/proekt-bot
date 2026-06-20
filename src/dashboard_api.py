@@ -661,6 +661,38 @@ def api_get_pairs():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/exchange/balance', methods=['GET'])
+def api_get_balance():
+    """Get balance from connected exchange.
+
+    Query params:
+        exchange: Exchange name
+    """
+    try:
+        exchange = request.args.get('exchange', '').lower()
+
+        if not hasattr(app, '_exchange_connections') or exchange not in app._exchange_connections:
+            return jsonify({'success': False, 'error': 'Exchange not connected'}), 400
+
+        conn = app._exchange_connections[exchange]
+        from .exchange_factory import ExchangeFactory
+
+        client = ExchangeFactory.create_client(
+            exchange=exchange,
+            api_key=conn['api_key'],
+            api_secret=conn['api_secret'],
+            passphrase=conn.get('passphrase', ''),
+            testnet=conn.get('testnet', True)
+        )
+
+        balance = client.get_balance()
+        return jsonify({'success': True, 'data': {'balance': balance, 'currency': 'USDT'}})
+
+    except Exception as e:
+        logger.error(f"Error fetching balance: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/config', methods=['GET'])
 def api_get_config():
     """Get current configuration."""

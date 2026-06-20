@@ -8,34 +8,28 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
         .container { max-width: 1800px; margin: 0 auto; padding: 20px; }
-
         .header { background: #1e293b; padding: 16px 24px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155; }
         .header h1 { font-size: 22px; color: #38bdf8; }
         .header-right { display: flex; align-items: center; gap: 12px; }
         .status-badge { padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; }
         .status-online { background: #065f46; color: #34d399; }
-        .status-offline { background: #7f1d1d; color: #fca5a5; }
-
         .section { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #334155; }
-        .section-title { font-size: 16px; font-weight: 700; color: #38bdf8; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-
-        .exchange-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
-        .exchange-card { background: #0f172a; border: 2px solid #334155; border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s; }
+        .section-title { font-size: 16px; font-weight: 700; color: #38bdf8; margin-bottom: 16px; }
+        .exchange-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+        .exchange-card { background: #0f172a; border: 2px solid #334155; border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.2s; }
         .exchange-card:hover { border-color: #38bdf8; }
         .exchange-card.active { border-color: #22c55e; background: #052e16; }
         .exchange-card.connected { border-color: #22c55e; }
-        .exchange-name { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
-        .exchange-status { font-size: 11px; color: #94a3b8; }
+        .exchange-name { font-weight: 700; font-size: 13px; }
+        .exchange-status { font-size: 11px; color: #94a3b8; margin-top: 2px; }
         .exchange-status.connected { color: #34d399; }
-
-        .conn-form { display: none; background: #0f172a; border-radius: 10px; padding: 16px; margin-bottom: 16px; border: 1px solid #334155; }
-        .conn-form.show { display: block; }
+        .exchange-balance { font-size: 11px; color: #fbbf24; margin-top: 2px; }
+        .conn-form { background: #0f172a; border-radius: 10px; padding: 16px; border: 1px solid #334155; }
         .form-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
         .form-group { display: flex; flex-direction: column; gap: 4px; }
-        .form-group label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group label { font-size: 11px; color: #94a3b8; text-transform: uppercase; }
         .form-group input, .form-group select { background: #1e293b; border: 1px solid #475569; border-radius: 6px; padding: 8px 10px; color: #e2e8f0; font-size: 13px; }
-        .form-group input:focus, .form-group select:focus { outline: none; border-color: #38bdf8; }
-
+        .form-group input:focus { outline: none; border-color: #38bdf8; }
         .btn { padding: 8px 16px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; transition: all 0.2s; }
         .btn-primary { background: #2563eb; color: white; }
         .btn-primary:hover { background: #1d4ed8; }
@@ -45,46 +39,35 @@
         .btn-danger:hover { background: #b91c1c; }
         .btn-secondary { background: #475569; color: white; }
         .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-        .pairs-section { margin-top: 16px; }
-        .pairs-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-        .pair-chip { padding: 6px 12px; background: #334155; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+        .pairs-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+        .pair-chip { padding: 6px 12px; background: #334155; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid transparent; }
         .pair-chip:hover { border-color: #38bdf8; }
         .pair-chip.selected { background: #1e40af; border-color: #3b82f6; }
-
         .bots-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-        .bot-slot { background: #0f172a; border: 2px solid #334155; border-radius: 10px; padding: 14px; transition: all 0.2s; }
-        .bot-slot.running { border-color: #22c55e; box-shadow: 0 0 20px rgba(34, 197, 94, 0.1); }
+        .bot-slot { background: #0f172a; border: 2px solid #334155; border-radius: 10px; padding: 14px; }
+        .bot-slot.running { border-color: #22c55e; }
         .bot-slot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .bot-slot-title { font-weight: 700; font-size: 13px; color: #38bdf8; }
         .bot-dot { width: 10px; height: 10px; border-radius: 50%; background: #475569; }
         .bot-dot.active { background: #22c55e; animation: pulse 2s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-
         .bot-slot select { width: 100%; background: #1e293b; border: 1px solid #475569; border-radius: 6px; padding: 6px 8px; color: #e2e8f0; font-size: 12px; margin-bottom: 8px; }
         .bot-controls { display: flex; gap: 6px; margin-top: 8px; }
         .bot-controls button { flex: 1; padding: 6px; font-size: 11px; }
         .bot-info { margin-top: 8px; padding: 8px; background: #1e293b; border-radius: 6px; font-size: 11px; color: #94a3b8; }
         .bot-info.active { background: #052e16; color: #34d399; }
-
-        .trend-box { margin: 8px 0; padding: 8px; border-radius: 6px; text-align: center; font-weight: 700; font-size: 12px; }
-        .trend-buy { background: #065f46; color: #34d399; }
-        .trend-sell { background: #7f1d1d; color: #fca5a5; }
-        .trend-neutral { background: #1e293b; color: #94a3b8; }
-
+        .trend-box { margin: 8px 0; padding: 8px; border-radius: 6px; text-align: center; font-weight: 700; font-size: 12px; background: #1e293b; color: #94a3b8; }
         .positions-table { width: 100%; border-collapse: collapse; }
         .positions-table th { background: #0f172a; padding: 10px; text-align: left; font-size: 12px; color: #94a3b8; border-bottom: 2px solid #334155; }
         .positions-table td { padding: 10px; border-bottom: 1px solid #334155; font-size: 13px; }
         .positive { color: #34d399; }
         .negative { color: #f87171; }
-
-        .webhook-info { background: #0f172a; border-radius: 8px; padding: 12px; margin-top: 12px; border: 1px solid #334155; }
-        .webhook-url { font-family: monospace; font-size: 12px; color: #38bdf8; word-break: break-all; }
-
+        .webhook-url { font-family: monospace; font-size: 12px; color: #38bdf8; word-break: break-all; background: #0f172a; padding: 10px; border-radius: 6px; margin-top: 8px; }
         .alert { padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; }
-        .alert-success { background: #065f46; color: #34d399; border: 1px solid #22c55e; }
-        .alert-error { background: #7f1d1d; color: #fca5a5; border: 1px solid #ef4444; }
-        .alert-info { background: #1e3a5f; color: #93c5fd; border: 1px solid #3b82f6; }
+        .alert-success { background: #065f46; color: #34d399; }
+        .alert-error { background: #7f1d1d; color: #fca5a5; }
+        .alert-info { background: #1e3a5f; color: #93c5fd; }
+        .btn-group { display: flex; gap: 8px; margin-top: 12px; }
     </style>
 </head>
 <body>
@@ -92,18 +75,17 @@
         <div class="header">
             <h1>Trading Bot Dashboard</h1>
             <div class="header-right">
-                <span class="status-badge status-online" id="status-badge">Online</span>
-                <button class="btn btn-secondary" onclick="loadRunningBots()">Refresh</button>
+                <span class="status-badge status-online">Online</span>
+                <button class="btn btn-secondary" onclick="loadAll()">Refresh</button>
             </div>
         </div>
-
         <div id="alert-container"></div>
 
         <!-- Exchange Connection -->
         <div class="section">
             <div class="section-title">Exchange Connection</div>
             <div class="exchange-grid" id="exchange-grid"></div>
-            <div class="conn-form" id="conn-form">
+            <div class="conn-form" id="conn-form" style="display:none;">
                 <div class="form-row">
                     <div class="form-group">
                         <label>API Key</label>
@@ -113,7 +95,7 @@
                         <label>API Secret</label>
                         <input type="password" id="conn-api-secret" placeholder="API Secret">
                     </div>
-                    <div class="form-group" id="passphrase-group">
+                    <div class="form-group" id="passphrase-group" style="display:none;">
                         <label>Passphrase</label>
                         <input type="password" id="conn-passphrase" placeholder="Passphrase">
                     </div>
@@ -132,32 +114,28 @@
                     </div>
                     <div class="form-group">
                         <label>&nbsp;</label>
-                        <button class="btn btn-secondary" onclick="disconnectExchange()">Disconnect</button>
+                        <button class="btn btn-danger" onclick="disconnectExchange()">Disconnect</button>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Trading Pairs -->
-        <div class="section" id="pairs-section" style="display:none;">
+        <div class="section">
             <div class="section-title">Trading Pairs</div>
             <div class="pairs-grid" id="pairs-grid"></div>
-            <div style="margin-top: 12px; display: flex; gap: 8px;">
+            <div class="btn-group">
                 <button class="btn btn-primary" onclick="selectAllPairs()">Select All</button>
                 <button class="btn btn-secondary" onclick="deselectAllPairs()">Deselect All</button>
             </div>
         </div>
 
-        <!-- Webhook Info -->
+        <!-- Webhook -->
         <div class="section">
             <div class="section-title">TradingView Webhook</div>
-            <div class="webhook-info">
-                <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">Webhook URL (set in TradingView alert):</div>
-                <div class="webhook-url" id="webhook-url">Loading...</div>
-                <div style="font-size: 11px; color: #64748b; margin-top: 8px;">
-                    JSON payload: { "symbol": "BTCUSDT", "action": "buy" | "sell", "price": 50000 }
-                </div>
-            </div>
+            <div style="font-size: 12px; color: #94a3b8;">Set this URL in your TradingView alert:</div>
+            <div class="webhook-url" id="webhook-url">Loading...</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 8px;">JSON: { "symbol": "BTCUSDT", "action": "buy"|"sell", "price": 50000 }</div>
         </div>
 
         <!-- Bot Slots -->
@@ -170,20 +148,8 @@
         <div class="section">
             <div class="section-title">Open Positions</div>
             <table class="positions-table">
-                <thead>
-                    <tr>
-                        <th>Exchange</th>
-                        <th>Symbol</th>
-                        <th>Side</th>
-                        <th>Size</th>
-                        <th>Entry</th>
-                        <th>PnL</th>
-                        <th>Source</th>
-                    </tr>
-                </thead>
-                <tbody id="positions-body">
-                    <tr><td colspan="7" style="text-align:center; color:#64748b;">No open positions</td></tr>
-                </tbody>
+                <thead><tr><th>Exchange</th><th>Symbol</th><th>Side</th><th>Size</th><th>Entry</th><th>PnL</th></tr></thead>
+                <tbody id="positions-body"><tr><td colspan="6" style="text-align:center; color:#64748b;">No open positions</td></tr></tbody>
             </table>
         </div>
     </div>
@@ -200,36 +166,39 @@
             { id: 'toobit', name: 'Toobit', passphrase: false }
         ];
 
+        const DEFAULT_PAIRS = [
+            'BTC-USDT-SWAP', 'ETH-USDT-SWAP', 'SOL-USDT-SWAP', 'BNB-USDT-SWAP',
+            'XRP-USDT-SWAP', 'ADA-USDT-SWAP', 'DOGE-USDT-SWAP', 'AVAX-USDT-SWAP',
+            'LINK-USDT-SWAP', 'DOT-USDT-SWAP', 'MATIC-USDT-SWAP', 'UNI-USDT-SWAP',
+            'ATOM-USDT-SWAP', 'LTC-USDT-SWAP', 'NEAR-USDT-SWAP', 'FIL-USDT-SWAP'
+        ];
+
         let selectedExchange = null;
         let connectedExchanges = {};
-        let availablePairs = [];
+        let availablePairs = [...DEFAULT_PAIRS];
         let selectedPairs = new Set();
-        let botSlots = Array.from({length: 10}, (_, i) => ({
-            id: i + 1, symbol: null, exchange: null, running: false, botId: null
-        }));
+        let botSlots = Array.from({length: 10}, (_, i) => ({id: i+1, symbol: null, exchange: null, running: false, botId: null}));
 
-        // Initialize exchange grid
         function initExchangeGrid() {
             const grid = document.getElementById('exchange-grid');
             grid.innerHTML = EXCHANGES.map(ex => `
                 <div class="exchange-card" id="ex-${ex.id}" onclick="selectExchange('${ex.id}')">
                     <div class="exchange-name">${ex.name}</div>
                     <div class="exchange-status" id="ex-status-${ex.id}">Not connected</div>
+                    <div class="exchange-balance" id="ex-balance-${ex.id}"></div>
                 </div>
             `).join('');
+            renderPairs();
         }
 
-        function selectExchange(exchangeId) {
-            selectedExchange = EXCHANGES.find(e => e.id === exchangeId);
+        function selectExchange(id) {
+            selectedExchange = EXCHANGES.find(e => e.id === id);
             document.querySelectorAll('.exchange-card').forEach(c => c.classList.remove('active'));
-            document.getElementById(`ex-${exchangeId}`).classList.add('active');
-            document.getElementById('conn-form').classList.add('show');
-
-            const pg = document.getElementById('passphrase-group');
-            pg.style.display = selectedExchange.passphrase ? 'block' : 'none';
-
-            if (connectedExchanges[exchangeId]) {
-                document.getElementById('conn-api-key').value = connectedExchanges[exchangeId].apiKey || '';
+            document.getElementById(`ex-${id}`).classList.add('active');
+            document.getElementById('conn-form').style.display = 'block';
+            document.getElementById('passphrase-group').style.display = selectedExchange.passphrase ? 'block' : 'none';
+            if (connectedExchanges[id]) {
+                document.getElementById('conn-api-key').value = connectedExchanges[id].apiKey || '';
                 document.getElementById('conn-api-secret').value = '';
                 document.getElementById('conn-passphrase').value = '';
             } else {
@@ -245,27 +214,12 @@
             const apiSecret = document.getElementById('conn-api-secret').value.trim();
             const passphrase = document.getElementById('conn-passphrase').value.trim();
             const mode = document.getElementById('conn-mode').value;
-
-            if (!apiKey || !apiSecret) {
-                showAlert('Enter API Key and Secret', 'error');
-                return;
-            }
-            if (selectedExchange.passphrase && !passphrase) {
-                showAlert(`${selectedExchange.name} requires Passphrase`, 'error');
-                return;
-            }
-
+            if (!apiKey || !apiSecret) { showAlert('Enter API Key and Secret', 'error'); return; }
+            if (selectedExchange.passphrase && !passphrase) { showAlert(`${selectedExchange.name} requires Passphrase`, 'error'); return; }
             try {
                 const resp = await fetch('/api/exchange/connect', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        exchange: selectedExchange.id,
-                        api_key: apiKey,
-                        api_secret: apiSecret,
-                        passphrase: passphrase,
-                        testnet: mode === 'testnet'
-                    })
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ exchange: selectedExchange.id, api_key: apiKey, api_secret: apiSecret, passphrase, testnet: mode === 'testnet' })
                 });
                 const result = await resp.json();
                 if (result.success) {
@@ -275,40 +229,50 @@
                     document.getElementById(`ex-status-${selectedExchange.id}`).classList.add('connected');
                     showAlert(`${selectedExchange.name} connected`, 'success');
                     loadPairs(selectedExchange.id);
+                    loadBalance(selectedExchange.id);
                 } else {
                     showAlert(result.error || 'Connection failed', 'error');
                 }
-            } catch(e) {
-                showAlert('Connection error', 'error');
-            }
+            } catch(e) { showAlert('Connection error', 'error'); }
         }
 
         async function disconnectExchange() {
             if (!selectedExchange) return;
+            const id = selectedExchange.id;
             try {
-                await fetch('/api/exchange/disconnect', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ exchange: selectedExchange.id })
+                const resp = await fetch('/api/exchange/disconnect', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ exchange: id })
                 });
-                delete connectedExchanges[selectedExchange.id];
-                document.getElementById(`ex-${selectedExchange.id}`).classList.remove('connected');
-                document.getElementById(`ex-status-${selectedExchange.id}`).textContent = 'Not connected';
-                document.getElementById(`ex-status-${selectedExchange.id}`).classList.remove('connected');
-                document.getElementById('pairs-section').style.display = 'none';
+                const result = await resp.json();
+                delete connectedExchanges[id];
+                document.getElementById(`ex-${id}`).classList.remove('connected');
+                document.getElementById(`ex-status-${id}`).textContent = 'Not connected';
+                document.getElementById(`ex-status-${id}`).classList.remove('connected');
+                document.getElementById(`ex-balance-${id}`).textContent = '';
                 showAlert(`${selectedExchange.name} disconnected`, 'info');
-            } catch(e) {}
+            } catch(e) { showAlert('Disconnect error', 'error'); }
         }
 
         async function loadPairs(exchangeId) {
             try {
                 const resp = await fetch(`/api/exchange/pairs?exchange=${exchangeId}`);
                 const result = await resp.json();
-                if (result.success) {
+                if (result.success && result.data && result.data.length > 0) {
                     availablePairs = result.data;
-                    selectedPairs.clear();
-                    renderPairs();
-                    document.getElementById('pairs-section').style.display = 'block';
+                } else {
+                    availablePairs = [...DEFAULT_PAIRS];
+                }
+            } catch(e) { availablePairs = [...DEFAULT_PAIRS]; }
+            renderPairs();
+        }
+
+        async function loadBalance(exchangeId) {
+            try {
+                const resp = await fetch(`/api/exchange/balance?exchange=${exchangeId}`);
+                const result = await resp.json();
+                if (result.success) {
+                    document.getElementById(`ex-balance-${exchangeId}`).textContent = `Balance: $${result.data.balance.toFixed(2)}`;
                 }
             } catch(e) {}
         }
@@ -316,91 +280,55 @@
         function renderPairs() {
             const grid = document.getElementById('pairs-grid');
             grid.innerHTML = availablePairs.map(p => `
-                <div class="pair-chip" id="pair-${p}" onclick="togglePair('${p}')">${p}</div>
+                <div class="pair-chip ${selectedPairs.has(p)?'selected':''}" id="pair-${p}" onclick="togglePair('${p}')">${p}</div>
             `).join('');
         }
 
         function togglePair(pair) {
-            if (selectedPairs.has(pair)) {
-                selectedPairs.delete(pair);
-                document.getElementById(`pair-${pair}`).classList.remove('selected');
-            } else {
-                selectedPairs.add(pair);
-                document.getElementById(`pair-${pair}`).classList.add('selected');
-            }
+            if (selectedPairs.has(pair)) { selectedPairs.delete(pair); } else { selectedPairs.add(pair); }
+            renderPairs();
             updateBotSlots();
         }
 
-        function selectAllPairs() {
-            availablePairs.forEach(p => selectedPairs.add(p));
-            document.querySelectorAll('.pair-chip').forEach(c => c.classList.add('selected'));
-            updateBotSlots();
-        }
-
-        function deselectAllPairs() {
-            selectedPairs.clear();
-            document.querySelectorAll('.pair-chip').forEach(c => c.classList.remove('selected'));
-            updateBotSlots();
-        }
+        function selectAllPairs() { availablePairs.forEach(p => selectedPairs.add(p)); renderPairs(); updateBotSlots(); }
+        function deselectAllPairs() { selectedPairs.clear(); renderPairs(); updateBotSlots(); }
 
         function updateBotSlots() {
             const pairs = Array.from(selectedPairs);
-            botSlots.forEach((slot, i) => {
-                slot.symbol = pairs[i] || null;
-                slot.exchange = slot.symbol ? selectedExchange?.id : null;
-            });
+            botSlots.forEach((slot, i) => { slot.symbol = pairs[i] || null; slot.exchange = slot.symbol ? selectedExchange?.id : null; });
             renderBotSlots();
         }
 
         function renderBotSlots() {
             const grid = document.getElementById('bots-grid');
             grid.innerHTML = botSlots.map(slot => `
-                <div class="bot-slot ${slot.running ? 'running' : ''}" id="slot-${slot.id}">
+                <div class="bot-slot ${slot.running?'running':''}" id="slot-${slot.id}">
                     <div class="bot-slot-header">
                         <div class="bot-slot-title">#${slot.id}</div>
-                        <div class="bot-dot ${slot.running ? 'active' : ''}"></div>
+                        <div class="bot-dot ${slot.running?'active':''}"></div>
                     </div>
-                    <select disabled>
-                        <option>${slot.symbol || 'No pair selected'}</option>
-                    </select>
-                    <div class="trend-box trend-neutral" id="trend-${slot.id}">No trend</div>
+                    <select disabled><option>${slot.symbol || 'No pair'}</option></select>
+                    <div class="trend-box" id="trend-${slot.id}">No trend</div>
                     <div class="bot-controls">
-                        <button class="btn btn-success" onclick="startBot(${slot.id})" ${!slot.symbol || slot.running ? 'disabled' : ''}>Start</button>
-                        <button class="btn btn-danger" onclick="stopBot(${slot.id})" ${!slot.running ? 'disabled' : ''}>Stop</button>
+                        <button class="btn btn-success" onclick="startBot(${slot.id})" ${!slot.symbol||slot.running?'disabled':''}>Start</button>
+                        <button class="btn btn-danger" onclick="stopBot(${slot.id})" ${!slot.running?'disabled':''}>Stop</button>
                     </div>
-                    <div class="bot-info ${slot.running ? 'active' : ''}" id="info-${slot.id}">
-                        ${slot.running ? `Running: ${slot.symbol}` : 'Idle'}
-                    </div>
+                    <div class="bot-info ${slot.running?'active':''}" id="info-${slot.id}">${slot.running?`Running: ${slot.symbol}`:'Idle'}</div>
                 </div>
             `).join('');
         }
 
         async function startBot(slotId) {
             const slot = botSlots[slotId - 1];
-            if (!slot.symbol || !slot.exchange) {
-                showAlert('Select a pair first', 'error');
-                return;
-            }
+            if (!slot.symbol || !slot.exchange) { showAlert('Select a pair first', 'error'); return; }
             try {
                 const resp = await fetch('/api/multibot/start', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        exchange: slot.exchange,
-                        symbol: slot.symbol,
-                        timeframe: 15,
-                        supertrend_multiplier: 3.0
-                    })
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ exchange: slot.exchange, symbol: slot.symbol, timeframe: 15, supertrend_multiplier: 3.0 })
                 });
                 const result = await resp.json();
-                if (result.success) {
-                    slot.running = true;
-                    slot.botId = result.bot_id;
-                    renderBotSlots();
-                    showAlert(`Bot #${slotId} started: ${slot.symbol}`, 'success');
-                } else {
-                    showAlert(result.error || 'Failed to start', 'error');
-                }
+                if (result.success) { slot.running = true; slot.botId = result.bot_id; renderBotSlots(); showAlert(`Bot #${slotId} started: ${slot.symbol}`, 'success'); }
+                else { showAlert(result.error || 'Failed', 'error'); }
             } catch(e) { showAlert('Error starting bot', 'error'); }
         }
 
@@ -408,34 +336,9 @@
             const slot = botSlots[slotId - 1];
             if (!slot.botId) return;
             try {
-                await fetch('/api/multibot/stop', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ bot_id: slot.botId })
-                });
-                slot.running = false;
-                slot.botId = null;
-                renderBotSlots();
-                showAlert(`Bot #${slotId} stopped`, 'success');
+                await fetch('/api/multibot/stop', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ bot_id: slot.botId }) });
+                slot.running = false; slot.botId = null; renderBotSlots(); showAlert(`Bot #${slotId} stopped`, 'success');
             } catch(e) {}
-        }
-
-        async function loadRunningBots() {
-            try {
-                const resp = await fetch('/api/bots/running');
-                const result = await resp.json();
-                if (result.success && result.data) {
-                    result.data.forEach(bot => {
-                        const slot = botSlots.find(s => s.botId === bot.bot_id);
-                        if (slot) {
-                            slot.running = bot.is_running;
-                            slot.symbol = bot.symbol;
-                        }
-                    });
-                    renderBotSlots();
-                }
-            } catch(e) {}
-            loadPositions();
         }
 
         async function loadPositions() {
@@ -444,21 +347,11 @@
                 const result = await resp.json();
                 if (result.success && result.data) {
                     const tbody = document.getElementById('positions-body');
-                    if (result.data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#64748b;">No open positions</td></tr>';
-                        return;
-                    }
+                    if (!result.data.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#64748b;">No open positions</td></tr>'; return; }
                     tbody.innerHTML = result.data.map(p => {
-                        const pnlClass = (p.pnl || p.unrealized_pnl || 0) >= 0 ? 'positive' : 'negative';
-                        return `<tr>
-                            <td>${p.exchange || 'N/A'}</td>
-                            <td style="font-weight:600;">${p.symbol}</td>
-                            <td><span style="padding:2px 8px; border-radius:4px; font-size:11px; background:${p.side==='Buy'?'#065f46':'#7f1d1d'}; color:${p.side==='Buy'?'#34d399':'#fca5a5'};">${p.side==='Buy'?'LONG':'SHORT'}</span></td>
-                            <td>${p.size}</td>
-                            <td>$${p.entry_price}</td>
-                            <td class="${pnlClass}">$${(p.pnl || p.unrealized_pnl || 0).toFixed(2)}</td>
-                            <td>${p.bot_id === 'manual' ? 'Manual' : 'Bot'}</td>
-                        </tr>`;
+                        const pnl = (p.pnl || p.unrealized_pnl || 0);
+                        const cls = pnl >= 0 ? 'positive' : 'negative';
+                        return `<tr><td>${p.exchange||'N/A'}</td><td style="font-weight:600;">${p.symbol}</td><td><span style="padding:2px 8px; border-radius:4px; font-size:11px; background:${p.side==='Buy'?'#065f46':'#7f1d1d'}; color:${p.side==='Buy'?'#34d399':'#fca5a5'};">${p.side==='Buy'?'LONG':'SHORT'}</span></td><td>${p.size}</td><td>$${p.entry_price}</td><td class="${cls}">$${pnl.toFixed(2)}</td></tr>`;
                     }).join('');
                 }
             } catch(e) {}
@@ -473,26 +366,13 @@
             setTimeout(() => a.remove(), 4000);
         }
 
-        // Load webhook URL
-        async function loadWebhookUrl() {
-            try {
-                const resp = await fetch('/api/config');
-                const result = await resp.json();
-                if (result.success) {
-                    const port = result.data.webhook_port || 5001;
-                    document.getElementById('webhook-url').textContent = `http://YOUR-SERVER:${port}/tradingview/webhook`;
-                }
-            } catch(e) {
-                document.getElementById('webhook-url').textContent = 'http://YOUR-SERVER:5001/tradingview/webhook';
-            }
-        }
+        // Use actual hostname for webhook URL
+        document.getElementById('webhook-url').textContent = `http://${window.location.hostname}:5001/tradingview/webhook`;
 
-        // Auto-refresh
-        setInterval(loadRunningBots, 5000);
+        function loadAll() { loadPositions(); }
+        setInterval(loadPositions, 5000);
 
-        // Init
         initExchangeGrid();
-        loadWebhookUrl();
         renderBotSlots();
     </script>
 </body>
