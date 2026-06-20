@@ -40,9 +40,11 @@
         .btn-secondary { background: #475569; color: white; }
         .btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .pairs-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
-        .pair-chip { padding: 6px 12px; background: #334155; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid transparent; }
+        .pair-chip { padding: 6px 12px; background: #334155; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid transparent; user-select: none; }
         .pair-chip:hover { border-color: #38bdf8; }
         .pair-chip.selected { background: #1e40af; border-color: #3b82f6; }
+        select[multiple] option { padding: 4px 8px; }
+        select[multiple] option:checked { background: #1e40af; color: white; }
         .bots-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
         .bot-slot { background: #0f172a; border: 2px solid #334155; border-radius: 10px; padding: 14px; }
         .bot-slot.running { border-color: #22c55e; }
@@ -123,10 +125,21 @@
         <!-- Trading Pairs -->
         <div class="section">
             <div class="section-title">Trading Pairs</div>
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <div style="flex: 1;">
+                    <label style="font-size: 11px; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 4px;">Hold Ctrl/Cmd to select multiple</label>
+                    <select id="pairs-select" multiple size="10" style="width: 100%; background: #1e293b; border: 1px solid #475569; border-radius: 6px; padding: 8px; color: #e2e8f0; font-size: 12px;"></select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 20px;">
+                    <button class="btn btn-primary" onclick="addSelectedFromDropdown()">Add Selected</button>
+                    <button class="btn btn-secondary" onclick="selectAllFromDropdown()">Select All</button>
+                </div>
+            </div>
             <div class="pairs-grid" id="pairs-grid"></div>
             <div class="btn-group">
-                <button class="btn btn-primary" onclick="selectAllPairs()">Select All</button>
+                <button class="btn btn-primary" onclick="selectAllPairs()">Select All Pairs</button>
                 <button class="btn btn-secondary" onclick="deselectAllPairs()">Deselect All</button>
+                <span style="font-size: 12px; color: #94a3b8; display: flex; align-items: center;" id="selected-count">0 selected</span>
             </div>
         </div>
 
@@ -278,10 +291,30 @@
         }
 
         function renderPairs() {
+            // Update chips
             const grid = document.getElementById('pairs-grid');
             grid.innerHTML = availablePairs.map(p => `
                 <div class="pair-chip ${selectedPairs.has(p)?'selected':''}" data-pair="${p}">${p}</div>
             `).join('');
+            // Update dropdown
+            const select = document.getElementById('pairs-select');
+            select.innerHTML = availablePairs.map(p => `<option value="${p}" ${selectedPairs.has(p)?'selected':''}>${p}</option>`).join('');
+            // Update count
+            document.getElementById('selected-count').textContent = `${selectedPairs.size} selected → ${Math.min(selectedPairs.size, 10)} bots`;
+        }
+
+        function addSelectedFromDropdown() {
+            const select = document.getElementById('pairs-select');
+            for (const opt of select.selectedOptions) { selectedPairs.add(opt.value); }
+            renderPairs();
+            updateBotSlots();
+        }
+
+        function selectAllFromDropdown() {
+            const select = document.getElementById('pairs-select');
+            for (const opt of select.options) { selectedPairs.add(opt.value); opt.selected = true; }
+            renderPairs();
+            updateBotSlots();
         }
 
         function selectAllPairs() { availablePairs.forEach(p => selectedPairs.add(p)); renderPairs(); updateBotSlots(); }
