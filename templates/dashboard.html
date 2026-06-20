@@ -43,8 +43,8 @@
         .pair-chip { padding: 6px 12px; background: #334155; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid transparent; user-select: none; }
         .pair-chip:hover { border-color: #38bdf8; }
         .pair-chip.selected { background: #1e40af; border-color: #3b82f6; }
-        select[multiple] option { padding: 4px 8px; }
-        select[multiple] option:checked { background: #1e40af; color: white; }
+        #pairs-checklist label:hover { background: #334155; }
+        #pairs-checklist label:has(input:checked) { background: #1e40af; }
         .bots-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
         .bot-slot { background: #0f172a; border: 2px solid #334155; border-radius: 10px; padding: 14px; }
         .bot-slot.running { border-color: #22c55e; }
@@ -125,22 +125,15 @@
         <!-- Trading Pairs -->
         <div class="section">
             <div class="section-title">Trading Pairs</div>
-            <div style="display: flex; gap: 12px; align-items: flex-start;">
-                <div style="flex: 1;">
-                    <label style="font-size: 11px; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 4px;">Hold Ctrl/Cmd to select multiple</label>
-                    <select id="pairs-select" multiple size="10" style="width: 100%; background: #1e293b; border: 1px solid #475569; border-radius: 6px; padding: 8px; color: #e2e8f0; font-size: 12px;"></select>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 20px;">
-                    <button class="btn btn-primary" onclick="addSelectedFromDropdown()">Add Selected</button>
-                    <button class="btn btn-secondary" onclick="selectAllFromDropdown()">Select All</button>
+            <div style="display: flex; gap: 16px;">
+                <div style="flex: 1; max-height: 300px; overflow-y: auto; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 8px;" id="pairs-checklist"></div>
+                <div style="display: flex; flex-direction: column; gap: 6px; min-width: 120px;">
+                    <button class="btn btn-primary" onclick="selectAllPairs()">Select All</button>
+                    <button class="btn btn-secondary" onclick="deselectAllPairs()">Deselect All</button>
+                    <div style="font-size: 12px; color: #38bdf8; text-align: center; margin-top: 8px;" id="selected-count">0 selected</div>
                 </div>
             </div>
             <div class="pairs-grid" id="pairs-grid"></div>
-            <div class="btn-group">
-                <button class="btn btn-primary" onclick="selectAllPairs()">Select All Pairs</button>
-                <button class="btn btn-secondary" onclick="deselectAllPairs()">Deselect All</button>
-                <span style="font-size: 12px; color: #94a3b8; display: flex; align-items: center;" id="selected-count">0 selected</span>
-            </div>
         </div>
 
         <!-- Webhook -->
@@ -291,31 +284,53 @@
         }
 
         function renderPairs() {
+            // Update checklist
+            const checklist = document.getElementById('pairs-checklist');
+            checklist.innerHTML = availablePairs.map(p => `
+                <label style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; cursor: pointer; border-radius: 4px; font-size: 12px; ${selectedPairs.has(p)?'background: #1e40af;':' '}" data-pair="${p}">
+                    <input type="checkbox" ${selectedPairs.has(p)?'checked':''} style="cursor: pointer;">
+                    <span>${p}</span>
+                </label>
+            `).join('');
             // Update chips
             const grid = document.getElementById('pairs-grid');
-            grid.innerHTML = availablePairs.map(p => `
-                <div class="pair-chip ${selectedPairs.has(p)?'selected':''}" data-pair="${p}">${p}</div>
+            grid.innerHTML = Array.from(selectedPairs).map(p => `
+                <div class="pair-chip selected" data-pair="${p}">${p}</div>
             `).join('');
-            // Update dropdown
-            const select = document.getElementById('pairs-select');
-            select.innerHTML = availablePairs.map(p => `<option value="${p}" ${selectedPairs.has(p)?'selected':''}>${p}</option>`).join('');
             // Update count
-            document.getElementById('selected-count').textContent = `${selectedPairs.size} selected → ${Math.min(selectedPairs.size, 10)} bots`;
+            document.getElementById('selected-count').textContent = `${selectedPairs.size} / ${availablePairs.length}`;
         }
 
-        function addSelectedFromDropdown() {
-            const select = document.getElementById('pairs-select');
-            for (const opt of select.selectedOptions) { selectedPairs.add(opt.value); }
-            renderPairs();
+        // Event delegation for checklist clicks
+        document.getElementById('pairs-checklist').addEventListener('click', function(e) {
+            const label = e.target.closest('label');
+            if (!label) return;
+            const pair = label.dataset.pair;
+            const checkbox = label.querySelector('input[type="checkbox"]');
+            if (e.target !== checkbox) checkbox.checked = !checkbox.checked;
+            if (checkbox.checked) { selectedPairs.add(pair); label.style.background = '#1e40af'; }
+            else { selectedPairs.delete(pair); label.style.background = ''; }
+            renderChips();
             updateBotSlots();
+        });
+
+        function renderChips() {
+            const grid = document.getElementById('pairs-grid');
+            grid.innerHTML = Array.from(selectedPairs).map(p => `
+                <div class="pair-chip selected" data-pair="${p}">${p}</div>
+            `).join('');
+            document.getElementById('selected-count').textContent = `${selectedPairs.size} / ${availablePairs.length}`;
         }
 
-        function selectAllFromDropdown() {
-            const select = document.getElementById('pairs-select');
-            for (const opt of select.options) { selectedPairs.add(opt.value); opt.selected = true; }
+        // Event delegation for chip removal
+        document.getElementById('pairs-grid').addEventListener('click', function(e) {
+            const chip = e.target.closest('.pair-chip');
+            if (!chip) return;
+            const pair = chip.dataset.pair;
+            selectedPairs.delete(pair);
             renderPairs();
             updateBotSlots();
-        }
+        });
 
         function selectAllPairs() { availablePairs.forEach(p => selectedPairs.add(p)); renderPairs(); updateBotSlots(); }
         function deselectAllPairs() { selectedPairs.clear(); renderPairs(); updateBotSlots(); }
@@ -398,16 +413,6 @@
         // Init
         initExchangeGrid();
         renderBotSlots();
-
-        // Event delegation for pair clicks (after DOM ready)
-        document.getElementById('pairs-grid').addEventListener('click', function(e) {
-            const chip = e.target.closest('.pair-chip');
-            if (!chip) return;
-            const pair = chip.dataset.pair;
-            if (selectedPairs.has(pair)) { selectedPairs.delete(pair); chip.classList.remove('selected'); }
-            else { selectedPairs.add(pair); chip.classList.add('selected'); }
-            updateBotSlots();
-        });
 
         // Auto-refresh
         setInterval(loadPositions, 5000);
