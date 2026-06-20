@@ -61,7 +61,7 @@ class TestLeverageMap:
         assert lev_map["ETH-USDT-SWAP"] == 25
 
     def test_get_leverage_for_symbol(self):
-        config = Config(leverage_config="BTC-USDT-SWAP:50,ETH-USDT-SWAP:25")
+        config = Config(exchange=Exchange.OKX, leverage_config="BTC-USDT-SWAP:50,ETH-USDT-SWAP:25")
         assert config.get_leverage_for_symbol("BTC-USDT-SWAP") == 50
         assert config.get_leverage_for_symbol("ETH-USDT-SWAP") == 25
         assert config.get_leverage_for_symbol("SOL-USDT-SWAP") == 50  # default

@@ -1502,6 +1502,11 @@ def api_multibot_start():
         config.supertrend_multiplier = multiplier
         config.trading_mode = TradingMode('testnet' if conn.get('testnet', True) else 'live')
 
+        # Normalize symbol for this exchange
+        normalized = config.normalize_symbol(symbol)
+        config.symbols = normalized
+        logger.info(f"Bot symbol normalized: {symbol} -> {normalized} ({exchange})")
+
         # Create and start bot
         from .trader import TradingBot
         bot = TradingBot(config)
