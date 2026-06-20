@@ -37,7 +37,7 @@ def _save_to_env(exchange, api_key, api_secret, passphrase, testnet):
     env_file = Path(".env")
     lines = []
     if env_file.exists():
-        lines = env_file.read_text().splitlines()
+        lines = env_file.read_text(encoding='utf-8').splitlines()
 
     # Keys to update
     prefix = exchange.upper()
@@ -66,7 +66,7 @@ def _save_to_env(exchange, api_key, api_secret, passphrase, testnet):
         if key not in updated_keys:
             new_lines.append(f"{key}={val}")
 
-    env_file.write_text("\n".join(new_lines) + "\n")
+    env_file.write_text("\n".join(new_lines) + "\n", encoding='utf-8')
 
 # Initialize connections from file
 app._exchange_connections = _load_connections()
