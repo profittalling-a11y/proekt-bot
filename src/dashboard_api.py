@@ -1824,6 +1824,81 @@ def api_hermes_status():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/stats', methods=['GET'])
+def api_stats():
+    """Get trading statistics across all connected exchanges."""
+    try:
+        from datetime import datetime, timedelta
+        now = datetime.now()
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        week_start = today_start - timedelta(days=now.weekday())
+        month_start = today_start.replace(day=1)
+
+        total_daily = 0.0
+        total_weekly = 0.0
+        total_monthly = 0.0
+        daily_trades = 0
+        weekly_trades = 0
+        monthly_trades = 0
+        per_exchange = {}
+
+        # Collect stats from all running bots
+        if _multibot_manager:
+            for bot_instance in _multibot_manager.bots.values():
+                if bot_instance.bot and hasattr(bot_instance.bot, 'trade_history'):
+                    th = bot_instance.bot.trade_history
+                    ex = bot_instance.bot.config.exchange.value
+
+                    for trade in th.trades:
+                        if trade.status.value != 'closed' or not trade.exit_time:
+                            continue
+                        try:
+                            exit_dt = datetime.fromisoformat(trade.exit_time)
+                        except Exception:
+                            continue
+
+                        pnl = trade.pnl
+
+                        if ex not in per_exchange:
+                            per_exchange[ex] = {'pnl': 0.0, 'trades': 0}
+                        per_exchange[ex]['pnl'] += pnl
+                        per_exchange[ex]['trades'] += 1
+
+                        if exit_dt >= today_start:
+                            total_daily += pnl
+                            daily_trades += 1
+                        if exit_dt >= week_start:
+                            total_weekly += pnl
+                            weekly_trades += 1
+                        if exit_dt >= month_start:
+                            total_monthly += pnl
+                            monthly_trades += 1
+
+        # Calculate percentages (assuming 1000 USDT starting balance)
+        starting_balance = 1000.0
+        daily_pct = (total_daily / starting_balance * 100) if starting_balance else 0
+        weekly_pct = (total_weekly / starting_balance * 100) if starting_balance else 0
+        monthly_pct = (total_monthly / starting_balance * 100) if starting_balance else 0
+
+        return jsonify({
+            'success': True,
+            'data': {
+                'daily_pnl': total_daily,
+                'daily_pnl_pct': daily_pct,
+                'daily_trades': daily_trades,
+                'weekly_pnl': total_weekly,
+                'weekly_pnl_pct': weekly_pct,
+                'weekly_trades': weekly_trades,
+                'monthly_pnl': total_monthly,
+                'monthly_pnl_pct': monthly_pct,
+                'monthly_trades': monthly_trades,
+                'per_exchange': per_exchange,
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/agent/log', methods=['POST'])
 def api_agent_log():
     """Log agent activity for dashboard display.

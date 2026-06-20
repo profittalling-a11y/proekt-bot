@@ -63,7 +63,7 @@
         .negative{color:#ef4444}
         .log-section{flex:1;display:flex;flex-direction:column}
         .log-title{font-size:13px;font-weight:700;color:#60a5fa;margin-bottom:8px}
-        .log-container{flex:1;overflow-y:auto;background:#0a0e1a;border:1px solid #374151;border-radius:6px;padding:8px;font-family:'SF Mono',Consolas,monospace;font-size:10px}
+        .log-container{flex:1;overflow-y:auto;background:#0a0e1a;border:1px solid #374151;border-radius:6px;padding:8px;font-family:'SF Mono',Consolas,monospace;font-size:10px;min-height:200px}
         .log-entry{padding:4px 0;border-bottom:1px solid #1f2937;line-height:1.4}
         .log-time{color:#6b7280}
         .log-agent{font-weight:700}
@@ -71,14 +71,22 @@
         .log-agent.trade{color:#22c55e}
         .log-agent.system{color:#60a5fa}
         .log-msg{color:#d1d5db}
-        .log-signal{color:#f59e0b}
-        .log-buy{color:#22c55e}
-        .log-sell{color:#ef4444}
         .webhook-url{font-family:monospace;font-size:10px;color:#60a5fa;background:#0a0e1a;padding:8px;border-radius:4px;margin-top:8px;word-break:break-all;border:1px solid #374151}
         .alert{padding:10px;border-radius:6px;margin-bottom:8px;font-size:12px}
         .alert-success{background:#065f46;color:#34d399}
         .alert-error{background:#7f1d1d;color:#fca5a5}
         .alert-info{background:#1e3a5f;color:#93c5fd}
+        .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+        .stat-card{background:#1f2937;border-radius:8px;padding:16px;border:1px solid #374151}
+        .stat-period{font-size:11px;color:#6b7280;text-transform:uppercase;margin-bottom:8px}
+        .stat-row{display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px}
+        .stat-label{color:#9ca3af}
+        .stat-val{font-weight:600}
+        .exchange-stats{margin-top:12px}
+        .ex-stat-row{display:flex;align-items:center;gap:8px;padding:8px;background:#111827;border-radius:6px;margin-bottom:6px;font-size:12px}
+        .ex-stat-icon{font-size:16px}
+        .ex-stat-name{font-weight:600;min-width:60px}
+        .ex-stat-pnl{margin-left:auto;font-weight:600}
     </style>
 </head>
 <body>
@@ -96,37 +104,66 @@
         <div class="left-panel">
             <div id="alert-container"></div>
 
-            <!-- Exchange Info -->
-            <div class="exchange-info" id="exchange-info">
-                <div class="metric"><div class="metric-label">Balance</div><div class="metric-value neutral" id="m-balance">$0.00</div></div>
-                <div class="metric"><div class="metric-label">Daily PnL</div><div class="metric-value neutral" id="m-daily">$0.00</div></div>
-                <div class="metric"><div class="metric-label">Weekly PnL %</div><div class="metric-value neutral" id="m-weekly">0.00%</div></div>
-                <div class="metric"><div class="metric-label">Open Positions</div><div class="metric-value neutral" id="m-positions">0</div></div>
-            </div>
-
-            <!-- Connection Form -->
-            <div class="conn-section" id="conn-section">
-                <div class="section-title">Connect Exchange</div>
-                <div class="conn-row">
-                    <input type="text" id="conn-api-key" placeholder="API Key">
-                    <input type="password" id="conn-api-secret" placeholder="API Secret">
-                    <input type="password" id="conn-passphrase" placeholder="Passphrase" style="display:none">
-                    <select id="conn-mode"><option value="testnet">Testnet</option><option value="live">Live</option></select>
-                    <button class="conn-btn connect" onclick="connectExchange()">Connect</button>
-                    <button class="conn-btn disconnect" onclick="disconnectExchange()">Disconnect</button>
+            <!-- Stats Tab Content -->
+            <div id="tab-stats" style="display:none">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-period">Today</div>
+                        <div class="stat-row"><span class="stat-label">PnL USDT</span><span class="stat-val" id="s-day-usdt">$0.00</span></div>
+                        <div class="stat-row"><span class="stat-label">PnL %</span><span class="stat-val" id="s-day-pct">0.00%</span></div>
+                        <div class="stat-row"><span class="stat-label">Trades</span><span class="stat-val" id="s-day-trades">0</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-period">This Week</div>
+                        <div class="stat-row"><span class="stat-label">PnL USDT</span><span class="stat-val" id="s-week-usdt">$0.00</span></div>
+                        <div class="stat-row"><span class="stat-label">PnL %</span><span class="stat-val" id="s-week-pct">0.00%</span></div>
+                        <div class="stat-row"><span class="stat-label">Trades</span><span class="stat-val" id="s-week-trades">0</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-period">This Month</div>
+                        <div class="stat-row"><span class="stat-label">PnL USDT</span><span class="stat-val" id="s-month-usdt">$0.00</span></div>
+                        <div class="stat-row"><span class="stat-label">PnL %</span><span class="stat-val" id="s-month-pct">0.00%</span></div>
+                        <div class="stat-row"><span class="stat-label">Trades</span><span class="stat-val" id="s-month-trades">0</span></div>
+                    </div>
                 </div>
+                <div class="section-title">Per Exchange</div>
+                <div class="exchange-stats" id="ex-stats"></div>
             </div>
 
-            <!-- Bot Slots -->
-            <div class="section-title">Bot Slots</div>
-            <div class="bots-grid" id="bots-grid"></div>
+            <!-- Exchange Tab Content -->
+            <div id="tab-exchange">
+                <!-- Exchange Info -->
+                <div class="exchange-info">
+                    <div class="metric"><div class="metric-label">Balance</div><div class="metric-value neutral" id="m-balance">$0.00</div></div>
+                    <div class="metric"><div class="metric-label">Daily PnL</div><div class="metric-value neutral" id="m-daily">$0.00</div></div>
+                    <div class="metric"><div class="metric-label">Weekly PnL %</div><div class="metric-value neutral" id="m-weekly">0.00%</div></div>
+                    <div class="metric"><div class="metric-label">Open Positions</div><div class="metric-value neutral" id="m-positions">0</div></div>
+                </div>
 
-            <!-- Positions -->
-            <div class="section-title">Open Positions</div>
-            <table class="positions-table">
-                <thead><tr><th>Symbol</th><th>Side</th><th>Size</th><th>Entry</th><th>PnL</th></tr></thead>
-                <tbody id="positions-body"><tr><td colspan="5" style="text-align:center;color:#4b5563">No positions</td></tr></tbody>
-            </table>
+                <!-- Connection Form -->
+                <div class="conn-section" id="conn-section">
+                    <div class="section-title">Connect Exchange</div>
+                    <div class="conn-row">
+                        <input type="text" id="conn-api-key" placeholder="API Key">
+                        <input type="password" id="conn-api-secret" placeholder="API Secret">
+                        <input type="password" id="conn-passphrase" placeholder="Passphrase" style="display:none">
+                        <select id="conn-mode"><option value="testnet">Testnet</option><option value="live">Live</option></select>
+                        <button class="conn-btn connect" onclick="connectExchange()">Connect</button>
+                        <button class="conn-btn disconnect" onclick="disconnectExchange()">Disconnect</button>
+                    </div>
+                </div>
+
+                <!-- Bot Slots -->
+                <div class="section-title">Bot Slots</div>
+                <div class="bots-grid" id="bots-grid"></div>
+
+                <!-- Positions -->
+                <div class="section-title">Open Positions</div>
+                <table class="positions-table">
+                    <thead><tr><th>Symbol</th><th>Side</th><th>Size</th><th>Entry</th><th>PnL</th></tr></thead>
+                    <tbody id="positions-body"><tr><td colspan="5" style="text-align:center;color:#4b5563">No positions</td></tr></tbody>
+                </table>
+            </div>
         </div>
 
         <div class="right-panel">
@@ -139,9 +176,7 @@
             <!-- Agent Task Log -->
             <div class="log-section">
                 <div class="log-title">Agent Task Log</div>
-                <div class="log-container" id="log-container">
-                    <div class="log-entry"><span class="log-time">--:--</span> <span class="log-agent system">SYSTEM</span> <span class="log-msg">Dashboard initialized</span></div>
-                </div>
+                <div class="log-container" id="log-container"></div>
             </div>
         </div>
     </div>
@@ -159,11 +194,10 @@
         ];
         const BASE_PAIRS = ['BTC','ETH','SOL','BNB','XRP','ADA','DOGE','AVAX','LINK','DOT','MATIC','UNI','ATOM','LTC','NEAR','FIL'];
 
-        let activeTab = 'all';
+        let activeTab = 'stats';
         let connectedExchanges = {};
         let selectedExchange = null;
-        let botSlots = Array.from({length:10},(_,i)=>({id:i+1,symbol:null,exchange:null,running:false,botId:null}));
-        let logEntries = [];
+        let botSlots = Array.from({length:10},(_,i)=>({id:i+1,symbol:null,exchange:null,running:false,botId:null,acceptingSignals:false}));
 
         function formatPair(base, exchangeId) {
             const ex = EXCHANGES.find(e=>e.id===exchangeId);
@@ -178,18 +212,15 @@
         }
 
         // Clock
-        function updateClock() {
-            document.getElementById('clock').textContent = new Date().toLocaleTimeString('ru-RU');
-        }
+        function updateClock() { document.getElementById('clock').textContent = new Date().toLocaleTimeString('ru-RU'); }
         setInterval(updateClock, 1000);
         updateClock();
 
         // Tabs
         function renderTabs() {
-            const allTab = [{id:'all',name:'All',icon:'📊'}];
+            const statsTab = [{id:'stats',name:'Statistics',icon:'📊'}];
             const exTabs = EXCHANGES.filter(ex=>!ex.disabled).map(ex=>({id:ex.id,name:ex.name,icon:ex.icon}));
-            const tabs = [...allTab, ...exTabs];
-
+            const tabs = [...statsTab, ...exTabs];
             document.getElementById('tabs').innerHTML = tabs.map(t =>
                 `<div class="tab${activeTab===t.id?' active':''}${connectedExchanges[t.id]?' connected':''}" onclick="switchTab('${t.id}')">
                     <span class="tab-icon">${t.icon}</span> ${t.name}
@@ -199,7 +230,11 @@
 
         function switchTab(id) {
             activeTab = id;
-            if(id !== 'all') {
+            const isStats = id === 'stats';
+            document.getElementById('tab-stats').style.display = isStats ? 'block' : 'none';
+            document.getElementById('tab-exchange').style.display = isStats ? 'none' : 'block';
+
+            if(!isStats) {
                 selectedExchange = EXCHANGES.find(e=>e.id===id);
                 if(selectedExchange) {
                     document.getElementById('conn-section').style.display = 'block';
@@ -211,19 +246,56 @@
             } else {
                 document.getElementById('conn-section').style.display = 'none';
                 selectedExchange = null;
+                loadStats();
             }
             renderTabs();
             renderBotSlots();
             updateMetrics();
         }
 
+        // Stats
+        async function loadStats() {
+            try {
+                const r = await fetch('/api/stats');
+                const res = await r.json();
+                if(res.success && res.data) {
+                    const d = res.data;
+                    setStatVal('s-day-usdt', `$${(d.daily_pnl||0).toFixed(2)}`, d.daily_pnl>=0);
+                    setStatVal('s-day-pct', `${(d.daily_pnl_pct||0).toFixed(2)}%`, d.daily_pnl>=0);
+                    document.getElementById('s-day-trades').textContent = d.daily_trades||0;
+                    setStatVal('s-week-usdt', `$${(d.weekly_pnl||0).toFixed(2)}`, d.weekly_pnl>=0);
+                    setStatVal('s-week-pct', `${(d.weekly_pnl_pct||0).toFixed(2)}%`, d.weekly_pnl>=0);
+                    document.getElementById('s-week-trades').textContent = d.weekly_trades||0;
+                    setStatVal('s-month-usdt', `$${(d.monthly_pnl||0).toFixed(2)}`, d.monthly_pnl>=0);
+                    setStatVal('s-month-pct', `${(d.monthly_pnl_pct||0).toFixed(2)}%`, d.monthly_pnl>=0);
+                    document.getElementById('s-month-trades').textContent = d.monthly_trades||0;
+
+                    const exStats = d.per_exchange || {};
+                    const container = document.getElementById('ex-stats');
+                    container.innerHTML = Object.entries(exStats).map(([ex, data]) => {
+                        const exInfo = EXCHANGES.find(e=>e.id===ex);
+                        const pnl = data.pnl||0;
+                        return `<div class="ex-stat-row">
+                            <span class="ex-stat-icon">${exInfo?.icon||'?'}</span>
+                            <span class="ex-stat-name">${exInfo?.name||ex}</span>
+                            <span style="color:#6b7280;font-size:11px">${data.trades||0} trades</span>
+                            <span class="ex-stat-pnl ${pnl>=0?'positive':'negative'}">$${pnl.toFixed(2)}</span>
+                        </div>`;
+                    }).join('') || '<div style="color:#4b5563;font-size:12px;text-align:center;padding:20px">No exchange data</div>';
+                }
+            } catch(e) {}
+        }
+
+        function setStatVal(id, text, positive) {
+            const el = document.getElementById(id);
+            el.textContent = text;
+            el.className = `stat-val ${positive?'positive':'negative'}`;
+        }
+
         // Metrics
         function updateMetrics() {
             const connId = getConnectedExchangeId();
-            if(connId) {
-                loadBalance(connId);
-                loadPositions();
-            }
+            if(connId) { loadBalance(connId); loadPositions(); }
         }
 
         async function loadBalance(exchangeId) {
@@ -231,9 +303,7 @@
                 const r = await fetch(`/api/exchange/balance?exchange=${exchangeId}`);
                 const res = await r.json();
                 if(res.success) {
-                    const bal = res.data.balance;
-                    document.getElementById('m-balance').textContent = `$${bal.toFixed(2)}`;
-                    document.getElementById('m-balance').className = 'metric-value neutral';
+                    document.getElementById('m-balance').textContent = `$${res.data.balance.toFixed(2)}`;
                 }
             } catch(e) {}
         }
@@ -248,21 +318,11 @@
                     const el = document.getElementById('m-daily');
                     el.textContent = `$${totalPnl.toFixed(2)}`;
                     el.className = `metric-value ${totalPnl>=0?'positive':'negative'}`;
-
                     const tb = document.getElementById('positions-body');
-                    if(!res.data.length) {
-                        tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#4b5563">No positions</td></tr>';
-                        return;
-                    }
+                    if(!res.data.length) { tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#4b5563">No positions</td></tr>'; return; }
                     tb.innerHTML = res.data.map(p => {
                         const pnl = p.pnl||p.unrealized_pnl||0;
-                        return `<tr>
-                            <td style="font-weight:600">${p.symbol}</td>
-                            <td><span style="padding:2px 6px;border-radius:3px;font-size:10px;background:${p.side==='Buy'?'#065f46':'#7f1d1d'};color:${p.side==='Buy'?'#34d399':'#fca5a5'}">${p.side==='Buy'?'LONG':'SHORT'}</span></td>
-                            <td>${p.size}</td>
-                            <td>$${p.entry_price}</td>
-                            <td class="${pnl>=0?'positive':'negative'}">$${pnl.toFixed(2)}</td>
-                        </tr>`;
+                        return `<tr><td style="font-weight:600">${p.symbol}</td><td><span style="padding:2px 6px;border-radius:3px;font-size:10px;background:${p.side==='Buy'?'#065f46':'#7f1d1d'};color:${p.side==='Buy'?'#34d399':'#fca5a5'}">${p.side==='Buy'?'LONG':'SHORT'}</span></td><td>${p.size}</td><td>$${p.entry_price}</td><td class="${pnl>=0?'positive':'negative'}">$${pnl.toFixed(2)}</td></tr>`;
                     }).join('');
                 }
             } catch(e) {}
@@ -285,12 +345,8 @@
                     connectedExchanges[selectedExchange.id] = {apiKey, mode};
                     showAlert(`${selectedExchange.name} connected`, 'success');
                     addLog('system', `${selectedExchange.name} connected (${mode})`);
-                    renderTabs();
-                    renderBotSlots();
-                    updateMetrics();
-                } else {
-                    showAlert(res.error||'Failed', 'error');
-                }
+                    renderTabs(); renderBotSlots(); updateMetrics();
+                } else { showAlert(res.error||'Failed', 'error'); }
             } catch(e) { showAlert('Connection error', 'error'); }
         }
 
@@ -302,9 +358,7 @@
                 delete connectedExchanges[selectedExchange.id];
                 showAlert(`${selectedExchange.name} disconnected`, 'info');
                 addLog('system', `${selectedExchange.name} disconnected`);
-                renderTabs();
-                renderBotSlots();
-                updateMetrics();
+                renderTabs(); renderBotSlots(); updateMetrics();
             } catch(e) {}
         }
 
@@ -333,7 +387,7 @@
                         <button class="btn-start" onclick="startBot(${s.id})"${!s.symbol||s.running||!connId?' disabled':''}>Start</button>
                         <button class="btn-stop" onclick="stopBot(${s.id})"${!s.running?' disabled':''}>Stop</button>
                     </div>
-                    <div class="slot-status${s.running?' active':''}">${s.running?`Running: ${displaySymbol}`:(s.symbol?displaySymbol:'Idle')}</div>
+                    <div class="slot-status${s.running?' active':''}">${s.running?`Receiving: ${displaySymbol}`:(s.symbol?displaySymbol:'Idle')}</div>
                 </div>`;
             }).join('');
         }
@@ -357,10 +411,10 @@
                     body:JSON.stringify({exchange:s.exchange, symbol:s.symbol, timeframe:15, supertrend_multiplier:3.0})});
                 const res = await r.json();
                 if(res.success) {
-                    s.running = true; s.botId = res.bot_id;
+                    s.running = true; s.acceptingSignals = true; s.botId = res.bot_id;
                     renderBotSlots();
                     showAlert(`Bot #${slotId} started: ${displaySymbol}`, 'success');
-                    addLog('trade', `Bot #${slotId} START ${displaySymbol}`);
+                    addLog('trade', `Bot #${slotId} START receiving signals: ${displaySymbol}`);
                 } else {
                     showAlert(res.error||'Failed', 'error');
                     addLog('system', `Bot #${slotId} FAILED: ${res.error||'unknown'}`);
@@ -375,10 +429,10 @@
                 await fetch('/api/multibot/stop', {method:'POST', headers:{'Content-Type':'application/json'},
                     body:JSON.stringify({bot_id:s.botId})});
                 const displaySymbol = s.symbol ? formatPair(s.symbol.replace(/-USDT-SWAP/g,'').replace(/USDT.*$/,'').replace(/[-_]/g,''), getConnectedExchangeId()||'okx') : '';
-                s.running = false; s.botId = null;
+                s.running = false; s.acceptingSignals = false; s.botId = null;
                 renderBotSlots();
-                showAlert(`Bot #${slotId} stopped`, 'success');
-                addLog('trade', `Bot #${slotId} STOP ${displaySymbol}`);
+                showAlert(`Bot #${slotId} stopped - ignoring TradingView signals`, 'success');
+                addLog('trade', `Bot #${slotId} STOP: ${displaySymbol} (ignoring signals)`);
             } catch(e) {}
         }
 
@@ -391,24 +445,7 @@
             entry.innerHTML = `<span class="log-time">${time}</span> <span class="log-agent ${agent}">${agent.toUpperCase()}</span> <span class="log-msg">${message}</span>`;
             container.appendChild(entry);
             container.scrollTop = container.scrollHeight;
-            logEntries.push({time, agent, message});
-            if(logEntries.length > 100) logEntries.shift();
         }
-
-        // Simulate agent signals (for demo)
-        function simulateSignal() {
-            const connId = getConnectedExchangeId();
-            if(!connId) return;
-            const bases = ['BTC','ETH','SOL'];
-            const base = bases[Math.floor(Math.random()*bases.length)];
-            const direction = Math.random() > 0.5 ? 'BUY' : 'SELL';
-            const price = (Math.random()*50000+1000).toFixed(2);
-            addLog('signal', `Supertrend ${direction} ${formatPair(base, connId)} @ $${price}`);
-            setTimeout(() => {
-                addLog('trade', `Agent executing ${direction} ${formatPair(base, connId)}`);
-            }, 1500);
-        }
-        setInterval(simulateSignal, 15000);
 
         // Init
         async function loadConnectionsFromServer() {
@@ -424,9 +461,9 @@
             } catch(e) {}
             renderTabs();
             renderBotSlots();
-            document.getElementById('conn-section').style.display = 'none';
+            document.getElementById('tab-stats').style.display = 'block';
+            document.getElementById('tab-exchange').style.display = 'none';
             document.getElementById('webhook-url').textContent = `http://${window.location.host}/tradingview/webhook`;
-            addLog('system', 'Dashboard loaded');
         }
 
         function showAlert(msg, type='info') {
