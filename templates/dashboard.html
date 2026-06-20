@@ -280,14 +280,8 @@
         function renderPairs() {
             const grid = document.getElementById('pairs-grid');
             grid.innerHTML = availablePairs.map(p => `
-                <div class="pair-chip ${selectedPairs.has(p)?'selected':''}" id="pair-${p}" onclick="togglePair('${p}')">${p}</div>
+                <div class="pair-chip ${selectedPairs.has(p)?'selected':''}" data-pair="${p}">${p}</div>
             `).join('');
-        }
-
-        function togglePair(pair) {
-            if (selectedPairs.has(pair)) { selectedPairs.delete(pair); } else { selectedPairs.add(pair); }
-            renderPairs();
-            updateBotSlots();
         }
 
         function selectAllPairs() { availablePairs.forEach(p => selectedPairs.add(p)); renderPairs(); updateBotSlots(); }
@@ -366,14 +360,27 @@
             setTimeout(() => a.remove(), 4000);
         }
 
-        // Use actual hostname for webhook URL
-        document.getElementById('webhook-url').textContent = `http://${window.location.hostname}:5001/tradingview/webhook`;
-
         function loadAll() { loadPositions(); }
-        setInterval(loadPositions, 5000);
 
+        // Init
         initExchangeGrid();
         renderBotSlots();
+
+        // Event delegation for pair clicks (after DOM ready)
+        document.getElementById('pairs-grid').addEventListener('click', function(e) {
+            const chip = e.target.closest('.pair-chip');
+            if (!chip) return;
+            const pair = chip.dataset.pair;
+            if (selectedPairs.has(pair)) { selectedPairs.delete(pair); chip.classList.remove('selected'); }
+            else { selectedPairs.add(pair); chip.classList.add('selected'); }
+            updateBotSlots();
+        });
+
+        // Auto-refresh
+        setInterval(loadPositions, 5000);
+
+        // Webhook URL
+        document.getElementById('webhook-url').textContent = `http://${window.location.hostname}:5001/tradingview/webhook`;
     </script>
 </body>
 </html>
