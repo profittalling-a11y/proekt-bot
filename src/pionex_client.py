@@ -23,7 +23,7 @@ class PionexClient(ExchangeClient):
     def __init__(self, api_key: str, api_secret: str, testnet: bool = True):
         super().__init__(api_key, api_secret, testnet)
         if testnet:
-            self.base_url = "https://testnet-pionex.com"
+            self.base_url = "https://api-testnet.pionex.com"
         else:
             self.base_url = "https://api.pionex.com"
         self._setup_session()

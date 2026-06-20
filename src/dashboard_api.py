@@ -3,6 +3,7 @@ from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
 import json
 import logging
+import time
 from pathlib import Path
 from typing import Optional
 from threading import Lock
@@ -1425,62 +1426,61 @@ def api_get_trading_pairs():
 
 @app.route('/api/multibot/start', methods=['POST'])
 def api_multibot_start():
-    """Start a bot for specific symbol with custom settings.
+    """Start a bot for specific symbol.
 
     Request body:
         {
-            "account_id": "account_id",
+            "exchange": "okx",
             "symbol": "BTC-USDT-SWAP",
             "timeframe": 15,
             "supertrend_multiplier": 3.0
         }
-
-    Returns:
-        JSON with bot_id
     """
-    global _multibot_manager
-
-    if _multibot_manager is None:
-        return jsonify({
-            'success': False,
-            'error': 'Multibot manager not available'
-        }), 400
+    global _multibot_manager, _config_instance
 
     try:
         data = request.get_json()
-        account_id = data.get('account_id')
-        symbol = data.get('symbol')
+        exchange = data.get('exchange', '')
+        symbol = data.get('symbol', '')
         timeframe = data.get('timeframe', 15)
         multiplier = data.get('supertrend_multiplier', 3.0)
 
-        if not account_id or not symbol:
-            return jsonify({
-                'success': False,
-                'error': 'account_id and symbol are required'
-            }), 400
+        if not exchange or not symbol:
+            return jsonify({'success': False, 'error': 'exchange and symbol are required'}), 400
 
-        # Start bot through multibot manager
-        bot_id = _multibot_manager.start_bot(
-            account_id=account_id,
-            symbol=symbol,
-            timeframe=timeframe,
-            supertrend_multiplier=multiplier
-        )
+        # Get connection for this exchange
+        conn = app._exchange_connections.get(exchange)
+        if not conn:
+            return jsonify({'success': False, 'error': f'{exchange} not connected'}), 400
 
-        logger.info(f"Started bot {bot_id} for {symbol} on account {account_id}")
+        # Create config for this bot
+        from .config import Config, Exchange as ExchangeEnum, TradingMode
+        config = Config()
+        config.exchange = ExchangeEnum(exchange)
+        config.set_api_credentials(conn['api_key'], conn['api_secret'], conn.get('passphrase', ''))
+        config.symbols = symbol
+        config.timeframe = timeframe
+        config.supertrend_multiplier = multiplier
+        config.trading_mode = TradingMode('testnet' if conn.get('testnet', True) else 'live')
 
-        return jsonify({
-            'success': True,
-            'bot_id': bot_id,
-            'message': f'Bot started for {symbol}'
-        })
+        # Create and start bot
+        from .trader import TradingBot
+        bot = TradingBot(config)
+        import threading
+        bot_id = f"{exchange}_{symbol}_{int(time.time()*1000)}"
+
+        def start_bot_thread():
+            bot.start()
+
+        thread = threading.Thread(target=start_bot_thread, daemon=True)
+        thread.start()
+
+        logger.info(f"Bot started: {symbol} on {exchange}")
+        return jsonify({'success': True, 'bot_id': bot_id, 'message': f'Bot started for {symbol}'})
 
     except Exception as e:
-        logger.error(f"Error starting multibot: {e}", exc_info=True)
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        logger.error(f"Error starting bot: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/multibot/stop', methods=['POST'])

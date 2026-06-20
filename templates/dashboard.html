@@ -281,16 +281,27 @@
         }
 
         function renderBotSlots() {
+            const pairOptions = availablePairs.map(p => `<option value="${p}">${p}</option>`).join('');
             document.getElementById('bots-grid').innerHTML=botSlots.map(s=>`
                 <div class="bot-slot${s.running?' running':''}">
                     <div class="bot-slot-header"><div class="bot-slot-title">#${s.id}</div><div class="bot-dot${s.running?' active':''}"></div></div>
-                    <div class="bot-pair">${s.symbol||'No pair'}</div>
+                    <select onchange="setBotPair(${s.id},this.value)" style="width:100%;background:#1e293b;border:1px solid #475569;border-radius:6px;padding:6px;color:#e2e8f0;font-size:11px;margin-bottom:8px;">
+                        <option value="">Select pair...</option>
+                        ${pairOptions.replace(`value="${s.symbol}"`,`value="${s.symbol}" selected`)}
+                    </select>
                     <div class="bot-controls">
                         <button class="btn btn-success" onclick="startBot(${s.id})"${!s.symbol||s.running?' disabled':''}>Start</button>
                         <button class="btn btn-danger" onclick="stopBot(${s.id})"${!s.running?' disabled':''}>Stop</button>
                     </div>
                     <div class="bot-info${s.running?' active':''}">${s.running?`Running: ${s.symbol}`:'Idle'}</div>
                 </div>`).join('');
+        }
+
+        function setBotPair(slotId, pair) {
+            const slot = botSlots[slotId - 1];
+            slot.symbol = pair || null;
+            slot.exchange = pair && selectedExchange ? selectedExchange.id : null;
+            renderBotSlots();
         }
 
         async function startBot(slotId) {
