@@ -113,16 +113,26 @@
 
     <script>
         const EXCHANGES = [
-            {id:'okx',name:'OKX',passphrase:true},{id:'bybit',name:'Bybit',passphrase:false},
-            {id:'bingx',name:'BingX',passphrase:false},{id:'gate',name:'Gate.io',passphrase:false},
-            {id:'bitget',name:'Bitget',passphrase:true},{id:'pionex',name:'Pionex',passphrase:false},
-            {id:'weex',name:'Weex',passphrase:true},{id:'toobit',name:'Toobit',passphrase:false}
+            {id:'okx',name:'OKX',passphrase:true,suffix:'-SWAP',sep:'-'},
+            {id:'bybit',name:'Bybit',passphrase:false,suffix:'',sep:''},
+            {id:'bingx',name:'BingX',passphrase:false,suffix:'',sep:'-'},
+            {id:'gate',name:'Gate.io',passphrase:false,suffix:'',sep:'_'},
+            {id:'bitget',name:'Bitget',passphrase:true,suffix:'',sep:''},
+            {id:'pionex',name:'Pionex',passphrase:false,suffix:'',sep:'',disabled:true},
+            {id:'weex',name:'Weex',passphrase:true,suffix:'',sep:'-'},
+            {id:'toobit',name:'Toobit',passphrase:false,suffix:'',sep:''}
         ];
-        const DEFAULT_PAIRS = ['BTC-USDT-SWAP','ETH-USDT-SWAP','SOL-USDT-SWAP','BNB-USDT-SWAP','XRP-USDT-SWAP','ADA-USDT-SWAP','DOGE-USDT-SWAP','AVAX-USDT-SWAP','LINK-USDT-SWAP','DOT-USDT-SWAP','MATIC-USDT-SWAP','UNI-USDT-SWAP','ATOM-USDT-SWAP','LTC-USDT-SWAP','NEAR-USDT-SWAP','FIL-USDT-SWAP'];
+        const BASE_PAIRS = ['BTC','ETH','SOL','BNB','XRP','ADA','DOGE','AVAX','LINK','DOT','MATIC','UNI','ATOM','LTC','NEAR','FIL'];
+
+        function formatPair(base, exchange) {
+            const ex = EXCHANGES.find(e=>e.id===exchange);
+            if(!ex) return `${base}-USDT-SWAP`;
+            if(ex.sep) return `${base}${ex.sep}USDT${ex.suffix}`;
+            return `${base}USDT${ex.suffix}`;
+        }
 
         let selectedExchange = null;
         let connectedExchanges = {};
-        let availablePairs = [...DEFAULT_PAIRS];
         let botSlots = Array.from({length:10},(_,i)=>({id:i+1,symbol:null,exchange:null,running:false,botId:null}));
 
         function getConnectedExchangeId() {
@@ -146,14 +156,14 @@
         }
 
         function initExchangeGrid() {
-            document.getElementById('exchange-grid').innerHTML = EXCHANGES.map(ex =>
+            document.getElementById('exchange-grid').innerHTML = EXCHANGES.filter(ex=>!ex.disabled).map(ex =>
                 `<div class="exchange-card${connectedExchanges[ex.id]?' connected':''}" id="ex-${ex.id}">
                     <div class="exchange-name">${ex.name}</div>
                     <div class="exchange-status${connectedExchanges[ex.id]?' connected':''}" id="ex-status-${ex.id}">${connectedExchanges[ex.id]?'Connected':'Not connected'}</div>
                     <div class="exchange-balance" id="ex-balance-${ex.id}"></div>
                 </div>`
             ).join('');
-            EXCHANGES.forEach(ex => {
+            EXCHANGES.filter(ex=>!ex.disabled).forEach(ex => {
                 document.getElementById(`ex-${ex.id}`).onclick = () => selectExchange(ex.id);
                 if (connectedExchanges[ex.id]) loadBalance(ex.id);
             });
@@ -220,10 +230,11 @@
 
         function renderBotSlots() {
             const connId = getConnectedExchangeId();
-            const pairOptions = availablePairs.map(p => `<option value="${p}">${p}</option>`).join('');
             const grid = document.getElementById('bots-grid');
             if(!grid) return;
-            grid.innerHTML = botSlots.map(s => `
+            grid.innerHTML = botSlots.map(s => {
+                const displaySymbol = s.symbol ? formatPair(s.symbol.replace(/-USDT-SWAP/g,'').replace(/USDT.*$/,'').replace(/[-_]/g,''), connId||'okx') : '';
+                return `
                 <div class="bot-slot${s.running?' running':''}">
                     <div class="bot-slot-header">
                         <div class="bot-slot-title">#${s.id}</div>
@@ -231,21 +242,25 @@
                     </div>
                     <select class="slot-select" onchange="setBotPair(${s.id},this.value)">
                         <option value="">Select pair...</option>
-                        ${availablePairs.map(p => `<option value="${p}"${s.symbol===p?' selected':''}>${p}</option>`).join('')}
+                        ${BASE_PAIRS.map(b => {
+                            const canonical = `${b}-USDT-SWAP`;
+                            const display = connId ? formatPair(b, connId) : canonical;
+                            return `<option value="${canonical}"${s.symbol===canonical?' selected':''}>${display}</option>`;
+                        }).join('')}
                     </select>
                     <div class="bot-controls">
                         <button class="btn btn-success" onclick="startBot(${s.id})"${!s.symbol||s.running||!connId?' disabled':''}>Start</button>
                         <button class="btn btn-danger" onclick="stopBot(${s.id})"${!s.running?' disabled':''}>Stop</button>
                     </div>
-                    <div class="bot-info${s.running?' active':''}">${s.running?`Running: ${s.symbol}`:(s.symbol?s.symbol:'Idle')}</div>
-                </div>
-            `).join('');
+                    <div class="bot-info${s.running?' active':''}">${s.running?`Running: ${displaySymbol||s.symbol}`:(displaySymbol||'Idle')}</div>
+                </div>`;
+            }).join('');
         }
 
-        function setBotPair(slotId, pair) {
+        function setBotPair(slotId, canonicalPair) {
             const slot = botSlots[slotId - 1];
-            slot.symbol = pair || null;
-            slot.exchange = pair ? getConnectedExchangeId() : null;
+            slot.symbol = canonicalPair || null;
+            slot.exchange = canonicalPair ? getConnectedExchangeId() : null;
             renderBotSlots();
         }
 
@@ -258,7 +273,10 @@
             try{
                 const r=await fetch('/api/multibot/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({exchange:s.exchange,symbol:s.symbol,timeframe:15,supertrend_multiplier:3.0})});
                 const res=await r.json();
-                if(res.success){s.running=true;s.botId=res.bot_id;renderBotSlots();showAlert(`Bot #${slotId} started: ${s.symbol}`,'success');}
+                if(res.success){
+                    const displaySymbol = formatPair(s.symbol.replace(/-USDT-SWAP/g,'').replace(/USDT.*$/,'').replace(/[-_]/g,''), connId);
+                    s.running=true;s.botId=res.bot_id;renderBotSlots();showAlert(`Bot #${slotId} started: ${displaySymbol}`,'success');
+                }
                 else showAlert(res.error||'Failed','error');
             }catch(e){showAlert('Error starting bot','error');}
         }

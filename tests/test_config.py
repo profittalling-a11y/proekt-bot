@@ -40,7 +40,7 @@ class TestSymbolNormalization:
 
     def test_bingx_btc_usdt_swap(self):
         config = Config(exchange=Exchange.BINGX)
-        assert config.normalize_symbol("BTC-USDT-SWAP") == "BTC-USDT-SWAP"
+        assert config.normalize_symbol("BTC-USDT-SWAP") == "BTC-USDT"
 
     def test_lowercase_input(self):
         config = Config(exchange=Exchange.OKX)
@@ -65,6 +65,11 @@ class TestLeverageMap:
         assert config.get_leverage_for_symbol("BTC-USDT-SWAP") == 50
         assert config.get_leverage_for_symbol("ETH-USDT-SWAP") == 25
         assert config.get_leverage_for_symbol("SOL-USDT-SWAP") == 50  # default
+
+    def test_leverage_after_normalize(self):
+        config = Config(exchange=Exchange.OKX, leverage_config="BTC-USDT-SWAP:50,ETH-USDT-SWAP:25")
+        normalized = config.normalize_symbol("ETH-USDT-SWAP")
+        assert config.get_leverage_for_symbol(normalized) == 25
 
 
 class TestIntervalString:

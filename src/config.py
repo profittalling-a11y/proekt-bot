@@ -331,55 +331,8 @@ class Config(BaseSettings):
         Returns:
             Symbol in exchange-specific format
         """
-        symbol = symbol.replace("_", "-").upper()
-
-        if self.exchange == Exchange.OKX:
-            # OKX format: BTC-USDT-SWAP
-            if "-" not in symbol and symbol.endswith("USDT"):
-                base = symbol[:-4]
-                symbol = f"{base}-USDT-SWAP"
-            elif not symbol.endswith("-SWAP"):
-                symbol = f"{symbol}-SWAP"
-        elif self.exchange == Exchange.BYBIT:
-            # Bybit format: BTCUSDT
-            symbol = symbol.replace("-SWAP", "").replace("-", "")
-            if not symbol.endswith("USDT"):
-                symbol = f"{symbol}USDT"
-        elif self.exchange == Exchange.BINGX:
-            # BingX format: BTC-USDT
-            if "-" not in symbol and symbol.endswith("USDT"):
-                base = symbol[:-4]
-                symbol = f"{base}-USDT"
-        elif self.exchange == Exchange.GATE:
-            # Gate.io format: BTC_USDT
-            symbol = symbol.replace("-SWAP", "").replace("-", "_")
-            if not symbol.endswith("_USDT"):
-                if symbol.endswith("-USDT"):
-                    symbol = symbol.replace("-USDT", "_USDT")
-                elif not symbol.endswith("_USDT"):
-                    symbol = f"{symbol}_USDT"
-        elif self.exchange == Exchange.BITGET:
-            # Bitget format: BTCUSDT
-            symbol = symbol.replace("-SWAP", "").replace("-", "").replace("_", "")
-            if not symbol.endswith("USDT"):
-                symbol = f"{symbol}USDT"
-        elif self.exchange == Exchange.PIONEX:
-            # Pionex format: BTCUSDT (Binance-compatible)
-            symbol = symbol.replace("-SWAP", "").replace("-", "").replace("_", "")
-            if not symbol.endswith("USDT"):
-                symbol = f"{symbol}USDT"
-        elif self.exchange == Exchange.WEEX:
-            # Weex format: BTC-USDT
-            if "-" not in symbol and symbol.endswith("USDT"):
-                base = symbol[:-4]
-                symbol = f"{base}-USDT"
-        elif self.exchange == Exchange.TOOBIT:
-            # Toobit format: BTCUSDT
-            symbol = symbol.replace("-SWAP", "").replace("-", "").replace("_", "")
-            if not symbol.endswith("USDT"):
-                symbol = f"{symbol}USDT"
-
-        return symbol
+        from .symbol_utils import normalize_symbol as _normalize
+        return _normalize(symbol, self.exchange)
 
     def get_leverage_for_symbol(self, symbol: str) -> int:
         """Get leverage for specific symbol.
